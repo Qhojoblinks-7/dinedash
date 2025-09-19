@@ -55,8 +55,118 @@ DineDash is a Django-based restaurant management application designed to handle 
 
 ## Current State
 - Models, admin registrations, and database migrations are fully implemented.
-- Views, templates, and URL patterns are yet to be developed.
-- No frontend or API endpoints implemented yet.
+- REST API endpoints are implemented for meals, orders, and users using Django REST Framework.
+- Views and URL patterns are configured for API functionality.
+- No frontend templates implemented yet.
+
+## API Endpoints Reference
+
+### 1. Meals API
+The meals API allows for the management of all menu items. It provides public-facing endpoints for customers to browse meals and staff-only endpoints for administrative tasks.
+
+| URL Pattern           | HTTP Methods       | Functionality                          | Notes                                      |
+|----------------------|--------------------|--------------------------------------|--------------------------------------------|
+| /api/meals/          | GET, POST          | List all meals or create a new meal. | Publicly accessible. Staff can create meals. |
+| /api/meals/<int:pk>/ | GET, PUT, PATCH, DELETE | Retrieve, update, or delete a single meal. | Crucial for managing the menu.              |
+
+Example: GET request to list meals
+```
+GET /api/meals/
+```
+Response:
+```json
+[
+  {
+    "id": 1,
+    "name": "Jollof Rice with Chicken",
+    "description": "A classic West African rice dish with fried chicken.",
+    "price": "25.00",
+    "prep_time": 30,
+    "is_available": true
+  },
+  {
+    "id": 2,
+    "name": "Waakye",
+    "description": "A Ghanaian dish of cooked rice and beans.",
+    "price": "15.00",
+    "prep_time": 20,
+    "is_available": true
+  }
+]
+```
+
+### 2. Orders API
+The orders API is designed to handle the customer ordering process and provides a staff-only endpoint to view a list of all orders.
+
+| URL Pattern           | HTTP Methods | Functionality           | Notes                          |
+|----------------------|--------------|------------------------|--------------------------------|
+| /api/orders/create/  | POST         | Create a new order.     | Publicly accessible for customers. |
+| /api/orders/         | GET          | Retrieve all orders.    | Staff-only, requires authentication. |
+
+Example: POST request to create an order
+```
+POST /api/orders/create/
+```
+Request Body:
+```json
+{
+  "customer_identifier": "Table 5",
+  "items": [
+    {
+      "meal": 1,
+      "quantity": 2
+    },
+    {
+      "meal": 2,
+      "quantity": 1
+    }
+  ]
+}
+```
+Response:
+```json
+{
+  "id": 1,
+  "customer_identifier": "Table 5",
+  "status": "pending",
+  "total_amount": "65.00",
+  "created_at": "2024-05-20T10:30:00Z",
+  "items": [
+    {
+      "id": 1,
+      "meal": 1,
+      "quantity": 2
+    },
+    {
+      "id": 2,
+      "meal": 2,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+### 3. Users API
+The users API provides endpoints to manage and retrieve user information, primarily for staff use.
+
+| URL Pattern | HTTP Methods | Functionality        | Notes                  |
+|-------------|--------------|---------------------|------------------------|
+| /api/users/ | GET          | Retrieve all users.  | Staff-only access.      |
+
+Example: GET request to list all users
+```
+GET /api/users/
+```
+Response:
+```json
+[
+  {
+    "id": 1,
+    "username": "dinedash",
+    "role": "staff"
+  }
+]
+```
 
 ## Setup and Installation
 1. Ensure Python and Django are installed.
@@ -68,10 +178,8 @@ DineDash is a Django-based restaurant management application designed to handle 
 7. Access the admin interface at `http://localhost:8000/admin/`
 
 ## Next Steps
-- Implement views and URL patterns for the apps.
-- Create templates for user interfaces.
+- Create frontend user interfaces using React JSX with Tailwind CSS.
 - Add authentication and authorization logic.
-- Develop APIs if needed (e.g., for mobile app integration).
 - Add tests for models and views.
 
 This README will be updated as development progresses.
