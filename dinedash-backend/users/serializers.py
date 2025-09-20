@@ -9,4 +9,4 @@ it converts django models into json
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = [id, 'username', 'email', 'role']
+        fields = ['id', 'username', 'email', 'role']

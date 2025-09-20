@@ -171,11 +171,13 @@ Response:
 ## Setup and Installation
 1. Ensure Python and Django are installed.
 2. Clone or navigate to the project directory.
-3. Install dependencies (if requirements.txt exists): `pip install -r requirements.txt`
-4. Apply migrations: `python manage.py migrate`
-5. Create a superuser: `python manage.py createsuperuser`
-6. Run the development server: `python manage.py runserver`
-7. Access the admin interface at `http://localhost:8000/admin/`
+3. Activate the virtual environment: `dinedash-backend\venv\Scripts\activate` (Windows) or `source dinedash-backend/venv/bin/activate` (Linux/Mac)
+4. Install dependencies (if requirements.txt exists): `pip install -r requirements.txt`
+5. Apply migrations: `python manage.py migrate`
+6. Create a superuser: `python manage.py createsuperuser`
+7. Run the development server: `python manage.py runserver`
+8. Access the admin interface at `http://localhost:8000/admin/`
+9. In VSCode, select the Python interpreter from the virtual environment (`dinedash-backend/venv/Scripts/python.exe` on Windows) to resolve import errors.
 
 ## Next Steps
 - Create frontend user interfaces using React JSX with Tailwind CSS.

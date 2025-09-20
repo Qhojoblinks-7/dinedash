@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from rest_framework.response import Response
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, OrderItemSerializer
 
@@ -9,16 +10,21 @@ class IsStaff(permissions.BasePermission):
         return super().has_object_permission(request, view, obj) and request.user.is_staff
     
 # API View
-class OrderCreateAPIView(generics.CreateAPIView):
+class OrderCreateAPIView(generics.GenericAPIView):
     """
-    API endpoint for creating orders.
-    customers will use this to place orders
+    API endpoint for creating orders with nested items payload.
     """
     queryset = Order.objects.all()
-    serializer_class = OrderSerializer
-        
-    # Allow any user (authenticated or not) to create orders
+    serializer_class = None
     permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        from .serializers import OrderCreateSerializer, OrderSerializer
+        serializer = OrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        out = OrderSerializer(order)
+        return Response(out.data)
     
 class OrderListAPIView(generics.ListAPIView):
     """
