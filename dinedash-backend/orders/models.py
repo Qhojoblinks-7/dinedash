@@ -1,7 +1,5 @@
 from django.db import models
 import uuid
-
-# Importing the Meal model to establish relationship with OrderItem
 from meals.models import Meal
 
 
@@ -36,12 +34,17 @@ class Order(models.Model):
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        help_text="A unique identifier for the customer, useful for anonymous or guest orders."
+        help_text="Unique identifier for the customer, useful for anonymous or guest orders."
     )
     customer_name = models.CharField(
         max_length=200,
         blank=True,
         help_text="Customer name or table number. Optional for guest orders."
+    )
+    customer_email = models.EmailField(
+        blank=True,
+        null=True,
+        help_text="Customer email address (needed for payments and receipts)."
     )
     order_type = models.CharField(
         max_length=10,

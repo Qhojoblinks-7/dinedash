@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     #new apps
     'users',
     'meals',
-    'orders'
+    'orders',
+    'payments',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +142,10 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
+# settings.py
+
+FLUTTERWAVE_PUBLIC_KEY = 'd44043e1-3ead-4cc1-b190-5a0c89f02ad6'
+FLUTTERWAVE_SECRET_KEY = 'ItZfEZE8pASHnTapuJl9cw0XQ8YxSszH'
+FLUTTERWAVE_BASE_URL = 'https://api.flutterwave.com/v3'
+
