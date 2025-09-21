@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from .models import Meal
+"""
+Serializer for the Meal model.
 
+Converts Meal model instances to JSON for API responses and
+validates incoming JSON data for creating/updating meals.
 """
-A serializer for the Meal model
-A serializer translates complex data types such as querysets and model instances into native Python datatypes that can then be easily rendered into JSON, XML or other content types. It also provides deserialization, allowing parsed data to be converted back into complex types, after first validating the incoming data.
-it converts django models into json
-"""
+
 class MealSerializer(serializers.ModelSerializer):
     class Meta:
         model = Meal

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { addItem, changeQty, removeItem, toggleDrawer, setNotes, setLastOrderId, clearCart } from './store/cartSlice';
 import Header from "./components/features/Header";
 import Menu from "./components/features/Menu";
 import CartDrawer from './components/features/CartDrawer';
 import { ToastProvider } from './components/ui/Toast';
 
 function App (){
-  const [cart, setCart] = useState([]); // {id,name,price,qty,image,available}
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [lastOrderId, setLastOrderId] = useState(null);
+  const cart = useSelector((s) => s.cart.items);
+  const drawerOpen = useSelector((s) => s.cart.drawerOpen);
+  const notes = useSelector((s) => s.cart.notes);
+  const lastOrderId = useSelector((s) => s.cart.lastOrderId);
+  const dispatch = useDispatch();
   const [orders, setOrders] = useState([]);
   const [currentOrder, setCurrentOrder] = useState(null);
 
@@ -32,63 +35,86 @@ function App (){
   }, [orders]);
 
   const handleAdd = (item) => {
-    setCart(prev => {
-      const idx = prev.findIndex(p => p.id === item.id);
-      if (idx === -1) {
-        return [...prev, {...item, qty: 1}];
-      }
-      const copy = [...prev];
-      copy[idx] = {...copy[idx], qty: copy[idx].qty + 1};
-      return copy;
-    });
-    setDrawerOpen(true);
+    dispatch(addItem(item));
   };
 
-  const handleChangeQty = (id, qty) => {
-    setCart(prev => prev.map(p => p.id === id ? {...p, qty} : p).filter(p => p.qty > 0));
-  };
-
-  const handleRemove = (id) => {
-    setCart(prev => prev.filter(p => p.id !== id));
-  };
+  const handleChangeQty = (id, qty) => dispatch(changeQty({ id, qty }));
+  const handleRemove = (id) => dispatch(removeItem(id));
 
   const handleCheckout = (payload = {}) => {
-    console.log('Checkout', { cart, notes, payload });
-    // simulate order creation
-    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-    setLastOrderId(orderId);
-
-    // Create order object
-    const newOrder = {
-      id: orderId,
-      items: [...cart],
-      notes,
-      paymentMethod: payload.method || 'card',
-      total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
-      tax: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) * 0.08,
-      status: 'received',
-      createdAt: new Date().toISOString(),
+    // Build payload for backend
+    const apiPayload = {
+      customer_name: payload.customer_name || '',
+      order_type: payload.order_type || 'dine_in',
+      items: cart.map((it) => ({ meal: it.id, quantity: it.qty })),
     };
 
-    // Add to orders array
-    setOrders(prev => [newOrder, ...prev]);
-    setCurrentOrder(newOrder);
+  // POST to backend order create endpoint
+  dispatch({ type: 'cart/setCheckoutStatus', payload: 'pending' });
+    fetch('/api/orders/create/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(apiPayload),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Order create failed: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        dispatch({ type: 'cart/setCheckoutStatus', payload: 'succeeded' });
+        const orderId = data.id || data.pk || `ORD-${Date.now().toString().slice(-6)}`;
+        dispatch(setLastOrderId(orderId));
 
-    // Clear cart
-    setCart([]);
+        const newOrder = {
+          id: orderId,
+          items: [...cart],
+          notes,
+          paymentMethod: payload.method || 'card',
+          total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+          tax: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) * 0.08,
+          status: 'received',
+          createdAt: new Date().toISOString(),
+        };
 
-    // keep drawer open so users can see confirmation/tracking
-    setDrawerOpen(true);
+        setOrders((prev) => [newOrder, ...prev]);
+        setCurrentOrder(newOrder);
+        dispatch(clearCart());
+        // open drawer so users can see confirmation/tracking
+        dispatch(toggleDrawer(true));
+      })
+      .catch((err) => {
+        dispatch({ type: 'cart/setCheckoutStatus', payload: 'failed' });
+        console.error('Order create failed, falling back to local simulation', err);
+        // fallback to local simulated order
+        const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+        dispatch(setLastOrderId(orderId));
+        const newOrder = {
+          id: orderId,
+          items: [...cart],
+          notes,
+          paymentMethod: payload.method || 'card',
+          total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+          tax: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) * 0.08,
+          status: 'received',
+          createdAt: new Date().toISOString(),
+        };
+        setOrders((prev) => [newOrder, ...prev]);
+        setCurrentOrder(newOrder);
+        dispatch(clearCart());
+        dispatch(toggleDrawer(true));
+      });
   };
 
   return (
     <ToastProvider>
       <div className="text-3xl font-bold">
-        <Header orderCount={orderCount} onOpenCart={() => setDrawerOpen(true)} />
+  <Header orderCount={orderCount} onOpenCart={() => dispatch(toggleDrawer(true))} />
         <Menu onAdd={handleAdd} cartItems={cart} />
         <CartDrawer
           open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          onClose={() => dispatch(toggleDrawer(false))}
           cartItems={cart}
           onChangeQty={handleChangeQty}
           onRemove={handleRemove}

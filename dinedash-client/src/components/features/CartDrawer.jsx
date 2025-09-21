@@ -4,19 +4,24 @@ import { faUtensils, faTimes, faClock, faCreditCard, faTrashAlt, faCheckCircle }
 import OrderTracking from './OrderTracking';
 import Button from '../ui/Button';
 import { useToast } from '../ui/toastContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { changeQty, removeItem, toggleDrawer, setNotes, setLastOrderId, clearCart } from '../../store/cartSlice';
 
 const CartDrawer = ({
-  open,
-  onClose,
-  cartItems = [],
-  onChangeQty = () => {},
-  onRemove = () => {},
-  notes = '',
-  onNotesChange = () => {},
-  onCheckout = () => {},
-  orderId = null,
+  open, // optional prop fallback
+  onClose, // optional callback fallback
+  onCheckout, // optional callback fallback
   currentOrder = null,
 }) => {
+  const dispatch = useDispatch();
+  const cartItems = useSelector((s) => s.cart.items || []);
+  const drawerOpen = useSelector((s) => s.cart.drawerOpen);
+  const notes = useSelector((s) => s.cart.notes || '');
+  const orderId = useSelector((s) => s.cart.lastOrderId);
+  const checkoutStatus = useSelector((s) => s.cart.checkoutStatus || 'idle');
+
+  const effectiveOpen = typeof open === 'boolean' ? open : drawerOpen;
+
   const subtotal = cartItems.reduce((s, it) => s + it.price * it.qty, 0);
   const tax = +(subtotal * 0.08).toFixed(2);
   const total = +(subtotal + tax).toFixed(2);
@@ -30,11 +35,16 @@ const CartDrawer = ({
 
   const { addToast } = useToast();
 
+  const handleClose = React.useCallback(() => {
+    if (typeof onClose === 'function') onClose();
+    else dispatch(toggleDrawer(false));
+  }, [onClose, dispatch]);
+
   useEffect(() => {
-    const handleEsc = (e) => e.key === 'Escape' && onClose();
+    const handleEsc = (e) => e.key === 'Escape' && handleClose();
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+  }, [handleClose]);
 
   // Mobile swipe-to-close
   const sheetRef = useRef(null);
@@ -70,7 +80,7 @@ const CartDrawer = ({
       if (currentYRef.current > THRESH) {
         // close
         sheet.style.transform = '';
-        onClose();
+        handleClose();
       } else {
         // snap back
         sheet.style.transform = '';
@@ -78,31 +88,33 @@ const CartDrawer = ({
       currentYRef.current = 0;
     }
 
-    sheet.addEventListener('touchstart', onTouchStart, { passive: true });
-    sheet.addEventListener('touchmove', onTouchMove, { passive: true });
-    sheet.addEventListener('touchend', onTouchEnd);
+  sheet.addEventListener('touchstart', onTouchStart, { passive: true });
+  sheet.addEventListener('touchmove', onTouchMove, { passive: true });
+  sheet.addEventListener('touchend', onTouchEnd);
 
     return () => {
       sheet.removeEventListener('touchstart', onTouchStart);
       sheet.removeEventListener('touchmove', onTouchMove);
       sheet.removeEventListener('touchend', onTouchEnd);
     };
-  }, [onClose]);
+  }, [handleClose]);
+
+  
 
   return (
-    <div className={`fixed inset-0 z-50 pointer-events-none ${open ? '' : 'opacity-0'}`} aria-hidden={!open}>
+    <div className={`fixed inset-0 z-50 pointer-events-none ${effectiveOpen ? '' : 'opacity-0'}`} aria-hidden={!effectiveOpen}>
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ease-in-out ${
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0'
+          effectiveOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0'
         }`}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Drawer */}
       <aside
         className={`absolute left-0 right-0 bottom-0 sm:right-0 sm:left-auto sm:top-0 h-[calc(100vh-4rem)] sm:h-full w-full sm:w-[500px] bg-white shadow-2xl transform transition-transform duration-300 ease-out ${
-          open ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-x-full'
+          effectiveOpen ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-x-full'
         } pointer-events-auto overflow-y-auto rounded-t-xl sm:rounded-none`}
         role="dialog"
         aria-modal="true"
@@ -116,7 +128,7 @@ const CartDrawer = ({
             </div>
             <h2 className="text-base sm:text-lg font-semibold text-brand-800">Your Order</h2>
           </div>
-          <button onClick={onClose} aria-label="Close cart" className="p-2 rounded-md hover:bg-gray-100">
+          <button onClick={handleClose} aria-label="Close cart" className="p-2 rounded-md hover:bg-gray-100">
             <FontAwesomeIcon icon={faTimes} className="text-sm sm:text-base text-gray-600" />
           </button>
         </div>
@@ -149,7 +161,7 @@ const CartDrawer = ({
               <p className="mt-2 text-sm text-gray-600">Thanks — your order is being prepared. We'll notify you when it's ready.</p>
               <div className="mt-4 flex gap-2 justify-center">
                 <Button onClick={() => { setShowTracking(true); }} bgClass="bg-[#0015AA]" textColor="text-white">Track my order</Button>
-                <Button onClick={onClose} className="border" bgClass="bg-white" textColor="text-[#0015AA]">Close</Button>
+                <Button onClick={handleClose} className="border" bgClass="bg-white" textColor="text-[#0015AA]">Close</Button>
               </div>
             </div>
           ) : (
@@ -179,7 +191,7 @@ const CartDrawer = ({
                     </div>
                       <div className="mt-2 flex items-center gap-3 flex-wrap">
                         <button
-                          onClick={() => onChangeQty(item.id, Math.max(0, item.qty - 1))}
+                          onClick={() => dispatch(changeQty({ id: item.id, qty: Math.max(0, item.qty - 1) }))}
                           className="w-11 h-11 rounded-full bg-red-500 text-white text-lg flex items-center justify-center hover:scale-105 transition-transform"
                           aria-label={`Decrease quantity of ${item.name}`}
                         >
@@ -187,13 +199,13 @@ const CartDrawer = ({
                         </button>
                         <div className="w-10 text-center font-medium text-base">{item.qty}</div>
                         <button
-                          onClick={() => onChangeQty(item.id, item.qty + 1)}
+                          onClick={() => dispatch(changeQty({ id: item.id, qty: item.qty + 1 }))}
                           className="w-11 h-11 rounded-full bg-green-500 text-white text-lg flex items-center justify-center hover:scale-105 transition-transform"
                           aria-label={`Increase quantity of ${item.name}`}
                         >
                           +
                         </button>
-                        <button onClick={() => onRemove(item.id)} className="ml-2 text-xs sm:text-sm text-red-600 flex items-center gap-2">
+                        <button onClick={() => dispatch(removeItem(item.id))} className="ml-2 text-xs sm:text-sm text-red-600 flex items-center gap-2">
                           <FontAwesomeIcon icon={faTrashAlt} />
                           <span className="sr-only">Remove</span>
                         </button>
@@ -209,7 +221,7 @@ const CartDrawer = ({
                 <textarea
                   id="order-notes"
                   value={notes}
-                  onChange={(e) => onNotesChange(e.target.value)}
+                  onChange={(e) => dispatch(setNotes(e.target.value))}
                   placeholder="Add special instructions (e.g., less spicy, extra sauce)."
                   className="w-full mt-2 p-2 border rounded-md resize-none text-sm sm:text-base"
                   rows={3}
@@ -308,26 +320,27 @@ const CartDrawer = ({
                       setOrderPlaced(true);
                       setShowTracking(true); // Auto-open tracking
 
-                      // Show success toast
-                      addToast({
-                        type: 'success',
-                        title: 'Order Placed!',
-                        message: `Order ${orderId || 'ORD-xxxxx'} has been placed successfully. Track your order below.`
-                      });
-
-                      // pass selected method and notes back to parent handler
-                      try {
-                        onCheckout({ method: paymentMethod, notes });
-                      } catch {
-                        onCheckout();
+                      // If parent provided onCheckout, call it. Otherwise perform a local mock checkout.
+                      if (typeof onCheckout === 'function') {
+                        try {
+                          onCheckout({ method: paymentMethod, notes });
+                        } catch {
+                          onCheckout();
+                        }
+                      } else {
+                        const oid = `ORD-${Date.now().toString().slice(-6)}`;
+                        dispatch(setLastOrderId(oid));
+                        dispatch(clearCart());
+                        addToast({ type: 'success', title: 'Order Placed!', message: `Order ${oid} has been placed successfully. Track your order below.` });
                       }
                     }}
                     fullWidth
                     bgClass="bg-[#0015AA]"
                     textColor="text-white"
                     ariaLabel="Place my order"
+                    disabled={checkoutStatus === 'pending'}
                   >
-                    Place my order
+                    {checkoutStatus === 'pending' ? 'Placing order…' : 'Place my order'}
                   </Button>
                 </div>
               </div>

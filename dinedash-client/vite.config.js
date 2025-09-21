@@ -10,4 +10,14 @@ export default defineConfig({
     tailwindcss(),
 
   ],
+  server: {
+    // Proxy /api requests to the Django backend during development
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

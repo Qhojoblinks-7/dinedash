@@ -4,6 +4,8 @@ import Button from '../ui/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { useToast } from '../ui/toastContext';
+import { useDispatch } from 'react-redux';
+import { addItem } from '../../store/cartSlice';
 
 const MealCard = ({
   id,
@@ -13,7 +15,7 @@ const MealCard = ({
   image,
   available = true,
   readyInMinutes = null,
-  onAdd = () => {},
+  
 }) => {
   const { addToast } = useToast() || { addToast: () => {} };
   // helper: animate image flying to cart
@@ -50,6 +52,8 @@ const MealCard = ({
       clone.remove();
     }, 700);
   };
+  const dispatch = useDispatch();
+
   return (
     <Card className="max-w-sm">
       <div className="p-5">
@@ -72,11 +76,11 @@ const MealCard = ({
           {/* Mobile FAB placed inside image wrapper to avoid covering description */}
           <div className="sm:hidden">
             <button
-              onClick={(e) => {
+                onClick={(e) => {
                 // animate
                 const imgEl = e.currentTarget.closest('.p-5')?.querySelector('img');
                 flyToCart(imgEl);
-                onAdd({ id, name, price });
+                dispatch(addItem({ id, name, price }));
                 // show toast
                 addToast({ type: 'success', title: 'Added', message: `${name} added to your order` });
               }}
@@ -105,7 +109,7 @@ const MealCard = ({
               onClick={(e) => {
                 const imgEl = e.currentTarget.closest('.p-5')?.querySelector('img');
                 flyToCart(imgEl);
-                onAdd({ id, name, price });
+                dispatch(addItem({ id, name, price }));
                 addToast({ type: 'success', title: 'Added', message: `${name} added to your order` });
               }}
               disabled={!available}

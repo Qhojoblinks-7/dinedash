@@ -1,19 +1,33 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-# Create your models here.
-
 class User(AbstractUser):
     """
-    A custom user model for staff authentication
-    The the username, email and password fields are inherited from AbstractUser
-    """
+    Custom user model for staff authentication.
     
+    Inherits:
+        - username
+        - email
+        - password
+        - first_name, last_name, is_staff, is_active, date_joined
+      from Django's AbstractUser.
+    
+    Additional fields:
+        - role: defines the staff member's role in the restaurant.
+    """
+
     STAFF_ROLES = [
         ('waiter', 'Waiter'),
         ('kitchen', 'Kitchen Staff'),
-        ('admin', 'Administrator')
+        ('admin', 'Administrator'),
     ]
-    
-    #the role field to define a staff member's role
-    role = models.CharField(max_length=100, choices=STAFF_ROLES)
+
+    role = models.CharField(
+        max_length=50, 
+        choices=STAFF_ROLES, 
+        verbose_name='Staff Role',
+        help_text='Select the role for the staff member'
+    )
+
+    def __str__(self):
+        return f"{self.username} ({self.get_role_display()})"
