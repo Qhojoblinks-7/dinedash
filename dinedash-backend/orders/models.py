@@ -23,11 +23,15 @@ class Order(models.Model):
     ]
 
     TYPE_DINE_IN = 'dine_in'
-    TYPE_TAKE_OUT = 'take_out'
+    TYPE_TAKE_OUT = 'takeaway'
+    TYPE_DELIVERY = 'delivery'
+    TYPE_PICKUP = 'pickup'
 
     ORDER_TYPE_CHOICES = [
         (TYPE_DINE_IN, 'Dine In'),
-        (TYPE_TAKE_OUT, 'Take-out'),
+        (TYPE_TAKE_OUT, 'Takeaway'),
+        (TYPE_DELIVERY, 'Delivery'),
+        (TYPE_PICKUP, 'Pickup'),
     ]
 
     customer_identifier = models.UUIDField(
@@ -46,11 +50,40 @@ class Order(models.Model):
         null=True,
         help_text="Customer email address (needed for payments and receipts)."
     )
+    contact_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Customer contact phone number."
+    )
+    table_number = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text="Table number for dine-in orders."
+    )
+    delivery_address = models.TextField(
+        blank=True,
+        help_text="Delivery address for delivery orders."
+    )
+    delivery_instructions = models.TextField(
+        blank=True,
+        help_text="Special delivery instructions."
+    )
+    pickup_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Preferred pickup time for takeaway/pickup orders."
+    )
+    delivery_fee = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0.00,
+        help_text="Delivery fee for delivery orders."
+    )
     order_type = models.CharField(
         max_length=10,
         choices=ORDER_TYPE_CHOICES,
         default=TYPE_DINE_IN,
-        help_text="Type of order: Dine In or Take-out."
+        help_text="Type of order: Dine In, Takeaway, Delivery, or Pickup."
     )
     status = models.CharField(
         max_length=20,

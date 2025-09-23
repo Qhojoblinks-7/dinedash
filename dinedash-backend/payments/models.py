@@ -13,11 +13,15 @@ class Payment(models.Model):
     METHOD_CASH = 'cash'
     METHOD_CARD = 'card'
     METHOD_ONLINE = 'online'
+    METHOD_MOMO = 'momo'
+    METHOD_MONO = 'mono'
 
     PAYMENT_METHOD_CHOICES = [
         (METHOD_CASH, 'Cash'),
         (METHOD_CARD, 'Card'),
         (METHOD_ONLINE, 'Online'),
+        (METHOD_MOMO, 'Mobile Money'),
+        (METHOD_MONO, 'Mono'),
     ]
 
     STATUS_PENDING = 'pending'
@@ -58,6 +62,30 @@ class Payment(models.Model):
         blank=True,
         null=True,
         help_text="Transaction ID for online or card payments."
+    )
+    provider = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Mobile money provider (e.g., MTN, Vodafone)."
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Phone number for mobile money payments."
+    )
+    bank_details = models.TextField(
+        blank=True,
+        help_text="Bank details for Mono payments."
+    )
+    transaction_ref = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Transaction reference for mobile money or bank transfers."
+    )
+    payment_token = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Payment token for Flutterwave or other payment processors."
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

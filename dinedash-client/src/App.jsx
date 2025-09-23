@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addItem, changeQty, removeItem, toggleDrawer, setNotes, setLastOrderId, clearCart } from './store/cartSlice';
-import Header from "./components/features/Header";
 import Menu from "./components/features/Menu";
-import CartDrawer from './components/features/CartDrawer';
+import CartDrawerFixed from './components/features/CartDrawer';
 import { ToastProvider } from './components/ui/Toast';
 
 function App (){
@@ -109,10 +108,14 @@ function App (){
 
   return (
     <ToastProvider>
-      <div className="text-3xl font-bold">
-  <Header orderCount={orderCount} onOpenCart={() => dispatch(toggleDrawer(true))} />
-        <Menu onAdd={handleAdd} cartItems={cart} />
-        <CartDrawer
+      <div className="min-h-screen">
+        <Menu
+          onAdd={handleAdd}
+          cartItems={cart}
+          orderCount={orderCount}
+          onOpenCart={() => dispatch(toggleDrawer(true))}
+        />
+        <CartDrawerFixed
           open={drawerOpen}
           onClose={() => dispatch(toggleDrawer(false))}
           cartItems={cart}

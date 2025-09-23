@@ -1,3 +1,4 @@
+// src/store/cartSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -14,13 +15,27 @@ const cartSlice = createSlice({
   reducers: {
     addItem(state, action) {
       const item = action.payload;
-      const idx = state.items.findIndex((i) => i.id === item.id);
-      if (idx === -1) {
+      const existingItem = state.items.find((i) => i.id === item.id);
+      if (!existingItem) {
         state.items.push({ ...item, qty: 1 });
       } else {
-        state.items[idx].qty += 1;
+        existingItem.qty += 1;
       }
       state.drawerOpen = true;
+    },
+    // New reducer to handle decrementing item quantity
+    decrementItem(state, action) {
+      const { id } = action.payload;
+      const existingItem = state.items.find((i) => i.id === id);
+
+      if (existingItem) {
+        if (existingItem.qty > 1) {
+          existingItem.qty -= 1;
+        } else {
+          // Remove the item completely if its quantity is 1
+          state.items = state.items.filter((i) => i.id !== id);
+        }
+      }
     },
     changeQty(state, action) {
       const { id, qty } = action.payload;
@@ -48,5 +63,17 @@ const cartSlice = createSlice({
     },
   },
 });
-export const { addItem, changeQty, removeItem, clearCart, setNotes, toggleDrawer, setLastOrderId, setCheckoutStatus } = cartSlice.actions;
+
+export const {
+  addItem,
+  decrementItem, // Export the new action
+  changeQty,
+  removeItem,
+  clearCart,
+  setNotes,
+  toggleDrawer,
+  setLastOrderId,
+  setCheckoutStatus,
+} = cartSlice.actions;
+
 export default cartSlice.reducer;

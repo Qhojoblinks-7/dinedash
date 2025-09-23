@@ -2,9 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import AppFixed from './AppFixed.jsx'
+import { Provider } from 'react-redux'
+import store from './store/store'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AppFixed />
+    <Provider store={store}>
+      <AppFixed />
+    </Provider>
   </StrictMode>,
 )

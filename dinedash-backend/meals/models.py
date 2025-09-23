@@ -36,6 +36,12 @@ class Meal(models.Model):
         help_text = "Is the meal available for order?",
         db_index = True
         ) # db_index=True creates a database index on this field to optimize queries filtering by availability
+    is_veg = models.BooleanField(
+        default = True,
+        help_text = "Is the meal vegetarian?",
+        db_index = True
+        ) # db_index=True creates a database index on this field to optimize queries filtering by dietary preference
+
     
     
     
@@ -55,3 +61,7 @@ class Meal(models.Model):
         # it is used in the admin interface and in the shell to display the object so we can easily identify it and differentiate it from other objects
         #the __str_ method returns the name of the meal with which we can easily identify it by the meal name in a string format
         return self.name
+    
+    
+    
+    

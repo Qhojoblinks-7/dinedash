@@ -64,6 +64,74 @@ export const apiService = {
       console.error('API call failed:', error);
       throw error;
     }
+  },
+
+  // Get a single order by ID
+  getOrder: async (orderId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API call failed:', error);
+      throw error;
+    }
+  },
+
+  // Initiate payment for an order
+  initiatePayment: async (orderId, paymentMethod) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payments/pay/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          order_id: orderId,
+          payment_method: paymentMethod,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API call failed:', error);
+      throw error;
+    }
+  },
+
+  // Complete checkout process
+  checkout: async (checkoutData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/checkout/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checkoutData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API call failed:', error);
+      throw error;
+    }
   }
 };
 

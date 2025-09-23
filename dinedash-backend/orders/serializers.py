@@ -47,6 +47,43 @@ class OrderCreateSerializer(serializers.Serializer):
         required=False,
         help_text="Optional customer name or table number."
     )
+    customer_email = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+        help_text="Customer email address."
+    )
+    contact_phone = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Customer contact phone number."
+    )
+    table_number = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Table number for dine-in orders."
+    )
+    delivery_address = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Delivery address for delivery orders."
+    )
+    delivery_instructions = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Special delivery instructions."
+    )
+    pickup_time = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+        help_text="Preferred pickup time for takeaway/pickup orders."
+    )
+    delivery_fee = serializers.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        required=False,
+        default=0.00,
+        help_text="Delivery fee for delivery orders."
+    )
     order_type = serializers.ChoiceField(
         choices=Order.ORDER_TYPE_CHOICES,
         default=Order.TYPE_DINE_IN
