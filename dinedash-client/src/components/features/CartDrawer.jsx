@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUtensils, faCreditCard, faCheckCircle, faMoneyBillAlt, faMobileAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUtensils, faCheckCircle} from '@fortawesome/free-solid-svg-icons';
+import { CreditCardIcon, CurrencyDollarIcon,DevicePhoneMobileIcon } from '@heroicons/react/24/outline';
 import OrderTracking from './OrderTracking';
 import CartHeader from './CartHeader';
 import Button from '../ui/Button';
@@ -315,9 +316,9 @@ const CartDrawer = ({
                 <div className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">Payment Method</div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'cash', label: 'Cash', icon: faMoneyBillAlt },
-                    { id: 'flutterwave', label: 'Flutterwave', icon: faCreditCard },
-                    { id: 'momo', label: 'Momo', icon: faMobileAlt },
+                    { id: 'cash', label: 'Cash', icon: CurrencyDollarIcon },
+                    { id: 'flutterwave', label: 'Flutterwave', icon: CreditCardIcon  },
+                    { id: 'momo', label: 'Momo', icon: DevicePhoneMobileIcon },
                   ].map(({ id, label, icon }) => (
                     <button
                       key={id}
@@ -330,10 +331,10 @@ const CartDrawer = ({
                       <div
                         className={`
                           w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg mb-1
-                          ${selectedPaymentMethod === id ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}
+                          ${selectedPaymentMethod === id ? 'bg-green-100 text-green-700' : ' text-gray-900'}
                         `}
                       >
-                        <FontAwesomeIcon icon={icon} className="text-base sm:text-lg" />
+                        {React.createElement(icon, { className: "text-sm sm:text-base md:text-lg lg:text-sm" })}
                       </div>
                       <span className="text-xs font-medium text-gray-700">{label}</span>
                     </button>

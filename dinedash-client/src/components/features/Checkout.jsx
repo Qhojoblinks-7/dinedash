@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { clearCart } from '../../store/cartSlice';
 import { apiService } from '../../services/api';
 
-const Checkout = ({ onClose, onSuccess }) => {
+const Checkout = ({ onClose, onSuccess, onCheckout }) => {
   const { addToast } = useToast();
   const dispatch = useDispatch();
   const cartItems = useSelector(state => state.cart.items);
@@ -87,24 +87,32 @@ const Checkout = ({ onClose, onSuccess }) => {
     setIsSubmitting(true);
 
     try {
-      const checkoutData = {
-        order: {
-          ...orderContext,
-          items: cartItems.map(item => ({ meal: item.id, quantity: item.qty })),
-        },
-        payment,
+      const checkoutPayload = {
+        customer_name: orderContext.customerName,
+        order_type: orderContext.type,
+        table_number: orderContext.tableNumber,
+        delivery_address: orderContext.deliveryAddress,
+        contact_phone: orderContext.contactPhone,
+        delivery_instructions: orderContext.deliveryInstructions,
+        pickup_time: orderContext.pickupTime,
+        method: payment.method,
+        provider: payment.provider,
+        phone: payment.phone,
+        bank_details: payment.bankDetails,
+        transaction_ref: payment.transactionRef,
       };
 
-      const response = await apiService.checkout(checkoutData);
+      // Use the onCheckout prop from App.jsx
+      await onCheckout(checkoutPayload);
 
       dispatch(clearCart());
       addToast({
         type: 'success',
         title: 'Order Placed!',
-        message: `Your order has been placed successfully. Order ID: ${response.order.id}`
+        message: 'Your order has been placed successfully.'
       });
 
-      if (onSuccess) onSuccess(response);
+      if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error('Checkout failed:', error);

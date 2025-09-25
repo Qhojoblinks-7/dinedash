@@ -15,11 +15,14 @@ class OrderRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]  # Adjust if needed
 
 
-class IsStaff(permissions.BasePermission):
+class IsStaffOrReadOnly(permissions.BasePermission):
     """
-    Custom permission to allow access only to staff users.
+    Only staff users can create/update/delete.
+    Everyone else can read (GET, HEAD, OPTIONS).
     """
     def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
         return request.user and request.user.is_staff
 
 
@@ -43,11 +46,11 @@ class OrderCreateAPIView(generics.GenericAPIView):
 class OrderListAPIView(generics.ListAPIView):
     """
     API endpoint to list all orders.
-    Only accessible by staff users.
+    Everyone can read orders (for dashboard), staff can manage.
     """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [IsStaff]
+    permission_classes = [IsStaffOrReadOnly]
 
 
 class CheckoutAPIView(APIView):
@@ -79,13 +82,44 @@ class CheckoutAPIView(APIView):
             payment_token=payment_data.get('payment_token', ''),
         )
 
-        # Handle payment initiation for online methods
+        # Simulate payment processing for testing
         payment_response = None
         if payment.method in ['online', 'card', 'momo', 'mono']:
-            # For now, just mark as pending
-            # In production, integrate with payment processors
-            payment.status = Payment.STATUS_PENDING
+            # Simulate payment processing with realistic outcomes
+            import random
+            import time
+
+            # Simulate processing delay
+            time.sleep(0.5)
+
+            # Simulate different payment outcomes for testing
+            test_scenarios = {
+                'success': Payment.STATUS_COMPLETED,
+                'pending': Payment.STATUS_PENDING,
+                'failed': Payment.STATUS_FAILED,
+            }
+
+            # Use transaction_ref to determine test outcome
+            transaction_ref = payment_data.get('transaction_ref', '').lower()
+
+            if 'fail' in transaction_ref:
+                payment.status = Payment.STATUS_FAILED
+                payment.transaction_id = f"TEST_FAIL_{random.randint(1000, 9999)}"
+            elif 'pending' in transaction_ref:
+                payment.status = Payment.STATUS_PENDING
+                payment.transaction_id = f"TEST_PENDING_{random.randint(1000, 9999)}"
+            else:
+                # Default to success for most cases
+                payment.status = Payment.STATUS_COMPLETED
+                payment.transaction_id = f"TEST_SUCCESS_{random.randint(1000, 9999)}"
+
             payment.save()
+
+            payment_response = {
+                'status': payment.status,
+                'transaction_id': payment.transaction_id,
+                'message': f"Payment {payment.status} via {payment.method}"
+            }
 
         response_data = {
             'order': OrderSerializer(order).data,
