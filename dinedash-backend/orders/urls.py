@@ -1,5 +1,11 @@
 from django.urls import path
-from .views import OrderCreateAPIView, OrderListAPIView, OrderRetrieveAPIView, CheckoutAPIView
+from .views import (
+    OrderCreateAPIView,
+    OrderListAPIView,
+    OrderRetrieveAPIView,
+    CheckoutAPIView,
+    StaffOrderRetrieveAPIView,
+)
 
 app_name = "orders"  # Optional: allows namespacing URLs for reverse lookups
 
@@ -10,8 +16,11 @@ urlpatterns = [
     # Create a new order
     path('create/', OrderCreateAPIView.as_view(), name='order-create'),
 
-    # Retrieve a single order
-    path('<int:pk>/', OrderRetrieveAPIView.as_view(), name='order-detail'),
+    # Retrieve a single order by tracking code (customers/guests)
+    path('<str:tracking_code>/', OrderRetrieveAPIView.as_view(), name='order-detail'),
+
+    # Staff retrieve by internal DB ID
+    path('staff/<int:pk>/', StaffOrderRetrieveAPIView.as_view(), name='staff-order-detail'),
 
     # Checkout endpoint
     path('checkout/', CheckoutAPIView.as_view(), name='checkout'),

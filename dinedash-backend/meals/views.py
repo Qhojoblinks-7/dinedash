@@ -16,7 +16,7 @@ class MealViewSet(viewsets.ModelViewSet):  # <- Allow CRUD for staff
     """
     Staff can create/update/delete meals.
     Everyone can view meals.
-    
+
     Endpoints:
     - GET /meals/ : list all meals
     - GET /meals/{id}/ : retrieve a meal
@@ -27,4 +27,12 @@ class MealViewSet(viewsets.ModelViewSet):  # <- Allow CRUD for staff
     queryset = Meal.objects.all()
     serializer_class = MealSerializer
     permission_classes = [IsStaffOrReadOnly]
+
+    def get_authenticators(self):
+        """
+        Override authentication for GET requests to allow anonymous access.
+        """
+        if self.request.method in permissions.SAFE_METHODS:
+            return []  # No authentication required for GET requests
+        return super().get_authenticators()
 

@@ -9,7 +9,7 @@ const AddToCartAnimation = ({ meal, onComplete }) => {
 
   useEffect(() => {
     // Get meal card position
-    const mealCard = document.querySelector(`[data-meal-id="${meal.id}"]`);
+    const mealCard = document.querySelector(`[data-meal-id="&#8373{meal.id}"]`);
     if (mealCard) {
       const rect = mealCard.getBoundingClientRect();
       setPosition({ x: rect.left, y: rect.top });

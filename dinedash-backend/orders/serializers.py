@@ -1,129 +1,120 @@
 from rest_framework import serializers
+from django.db import transaction
+from decimal import Decimal
 from .models import Order, OrderItem
 from meals.models import Meal
-from meals.serializers import MealSerializer
 
+
+# --- READ/DISPLAY SERIALIZERS ---
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    """
-    Serializer for individual OrderItem objects.
-    Includes nested Meal details (read-only).
-    """
-    meal = MealSerializer(read_only=True)
-
+    """ Read-only serializer for individual items. 
+        Uses stored item_name/unit_price for historical accuracy. """
     class Meta:
         model = OrderItem
-        fields = ['meal', 'quantity']
+        fields = ['item_name', 'quantity', 'unit_price']
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Order objects.
-    Includes nested OrderItemSerializer for all items in the order.
-    """
+    """ General read-only serializer for Order objects. """
     items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = [
+            'id',
+            'tracking_code',   # <--- Short customer-facing code
+            'customer_name',
+            'customer_email',
+            'contact_phone',
+            'order_type',
+            'status',
+            'total_amount',
+            'delivery_fee',
+            'delivery_address',
+            'delivery_instructions',
+            'pickup_time',
+            'created_at',
+            'items',
+        ]
+        read_only_fields = ['tracking_code', 'status', 'total_amount', 'created_at']
 
+
+# --- WRITE/CREATE SERIALIZERS ---
 
 class OrderCreateItemSerializer(serializers.Serializer):
-    """
-    Serializer for creating a single item within an order.
-    Accepts meal ID and quantity.
-    """
-    meal = serializers.IntegerField()
+    """ Accepts meal ID and quantity from the client. """
+    meal_id = serializers.IntegerField(min_value=1)
     quantity = serializers.IntegerField(min_value=1)
 
 
 class OrderCreateSerializer(serializers.Serializer):
-    """
-    Serializer for creating an Order with multiple items.
-    Handles validation and nested creation of OrderItems.
-    """
-    customer_name = serializers.CharField(
-        allow_blank=True,
-        required=False,
-        help_text="Optional customer name or table number."
-    )
-    customer_email = serializers.EmailField(
-        required=False,
-        allow_blank=True,
-        help_text="Customer email address."
-    )
-    contact_phone = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Customer contact phone number."
-    )
-    table_number = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Table number for dine-in orders."
-    )
-    delivery_address = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Delivery address for delivery orders."
-    )
-    delivery_instructions = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Special delivery instructions."
-    )
-    pickup_time = serializers.DateTimeField(
-        required=False,
-        allow_null=True,
-        help_text="Preferred pickup time for takeaway/pickup orders."
-    )
-    delivery_fee = serializers.DecimalField(
-        max_digits=6,
-        decimal_places=2,
-        required=False,
-        default=0.00,
-        help_text="Delivery fee for delivery orders."
-    )
+    """ Securely creates an Order and nested OrderItems. """
+    customer_name = serializers.CharField(allow_blank=True, required=False)
+    customer_email = serializers.EmailField(required=False, allow_blank=True)
+    contact_phone = serializers.CharField(required=False, allow_blank=True)
+    table_number = serializers.CharField(required=False, allow_blank=True)
+    delivery_address = serializers.CharField(required=False, allow_blank=True)
+    delivery_instructions = serializers.CharField(required=False, allow_blank=True)
+    pickup_time = serializers.DateTimeField(required=False, allow_null=True)
+    delivery_fee = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     order_type = serializers.ChoiceField(
-        choices=Order.ORDER_TYPE_CHOICES,
-        default=Order.TYPE_DINE_IN
+        choices=Order.ORDER_TYPE_CHOICES, default=Order.TYPE_DINE_IN
     )
     items = OrderCreateItemSerializer(many=True)
 
-    def validate_items(self, value):
-        """
-        Ensure that the order contains at least one item.
-        """
-        if not value:
-            raise serializers.ValidationError('Order must contain at least one item.')
-        return value
+    def validate(self, data):
+        items_data = data.get('items', [])
+        if not items_data:
+            raise serializers.ValidationError({"items": "Order must contain at least one item."})
 
-    def create(self, validated_data):
-        """
-        Create an Order instance along with its OrderItems.
-        Calculates the total amount automatically.
-        """
-        items_data = validated_data.pop('items')
-        order = Order.objects.create(**validated_data)
+        calculated_total = Decimal('0.00')
+        delivery_fee = data.get('delivery_fee') or Decimal('0.00')
+        processed_items = []
 
-        total_amount = 0
         for item_data in items_data:
-            meal_id = item_data.get('meal')
-            quantity = item_data.get('quantity', 1)
+            meal_id = item_data['meal_id']
+            quantity = item_data['quantity']
 
             try:
                 meal = Meal.objects.get(pk=meal_id)
             except Meal.DoesNotExist:
-                raise serializers.ValidationError(f"Meal with id {meal_id} does not exist.")
+                raise serializers.ValidationError(f"Meal with ID {meal_id} does not exist.")
 
-            # Create OrderItem
-            OrderItem.objects.create(order=order, meal=meal, quantity=quantity)
+            if not getattr(meal, 'is_available', True):
+                raise serializers.ValidationError(f"Meal '{meal.name}' is currently unavailable.")
 
-            # Calculate total
-            total_amount += float(meal.price) * int(quantity)
+            item_price = meal.price * quantity
+            calculated_total += item_price
 
-        # Save total amount to order
-        order.total_amount = total_amount
-        order.save()
+            processed_items.append({
+                'meal': meal,
+                'quantity': quantity,
+                'unit_price': meal.price,
+                'item_name': meal.name,
+            })
+
+        data['total_amount'] = calculated_total + delivery_fee
+        data['items_processed'] = processed_items
+        return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        items_processed = validated_data.pop('items_processed')
+        validated_data.pop('items', None)
+
+        order = Order.objects.create(**validated_data)
+
+        order_items_to_create = [
+            OrderItem(
+                order=order,
+                meal=item['meal'],
+                quantity=item['quantity'],
+                unit_price=item['unit_price'],
+                item_name=item['item_name'],
+            )
+            for item in items_processed
+        ]
+        OrderItem.objects.bulk_create(order_items_to_create)
 
         return order

@@ -1,142 +1,141 @@
-import requests
-from django.conf import settings
+import uuid
+from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser 
+
+from orders.models import Order 
 from .models import Payment
-from orders.models import Order
+from .serializers import PaymentCreateSerializer, PaymentSerializer 
 
+# --- STAFF/ADMIN VIEWS ---
 
-class FlutterwavePaymentAPIView(generics.GenericAPIView):
+class PaymentListAPIView(generics.ListAPIView):
     """
-    Initiates a Flutterwave payment for an order.
-    Creates a Payment record and returns the Flutterwave payment link.
+    API endpoint for staff/admin to view a list of all payment records for auditing.
     """
-    permission_classes = [IsAuthenticated]
+    queryset = Payment.objects.all().select_related('order').order_by('-created_at')
+    serializer_class = PaymentSerializer 
+    permission_classes = [IsAdminUser] 
+
+# ----------------------------------------------------------------------
+
+# --- MOCK PAYMENT GATEWAY (Capstone Simulation) ---
+
+class MockPaymentAPIView(generics.GenericAPIView):
+    """
+    Simulates the initiation of an external payment gateway.
+    1. Validates order and amount.
+    2. Creates a PENDING Payment record.
+    3. Returns a redirect URL to the local MockVerifyAPIView.
+    """
+    permission_classes = [AllowAny]
+    serializer_class = PaymentCreateSerializer 
 
     def post(self, request, *args, **kwargs):
-        order_id = request.data.get('order_id')
-        payment_method = request.data.get('payment_method')
+        # 1. Validate data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        
+        order = validated_data['order']
+        amount = validated_data['amount']
+        method = validated_data['payment_method']
+        
+        # Security check: Prevent re-initiating a successful payment
+        if order.status != Order.STATUS_PENDING:
+             return Response({"error": "Order is not in a pending state and cannot initiate payment."}, 
+                             status=status.HTTP_400_BAD_REQUEST)
+        
+        # 2. Create PENDING Payment Record
+        with transaction.atomic():
+            tx_ref = f"MOCK-{order.id}-{uuid.uuid4().hex[:6]}" 
+            
+            payment = Payment.objects.create(
+                order=order,
+                amount=amount,
+                method=method, 
+                status=Payment.STATUS_PENDING,
+                transaction_ref=tx_ref
+            )
 
-        # Validate order
-        try:
-            order = Order.objects.get(id=order_id)
-        except Order.DoesNotExist:
-            return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if order.status == 'completed':
-            return Response({"error": "Order is already paid."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Create Payment record
-        payment = Payment.objects.create(
-            order=order,
-            amount=order.total_amount,
-            method=payment_method,
-            status=Payment.STATUS_PENDING
-        )
-
-        # Flutterwave payload
-        flutterwave_payload = {
-            "tx_ref": f"order_{order.id}_payment_{payment.id}",
-            "amount": str(payment.amount),
-            "currency": "GHS",  # Ghana Cedis
-            "redirect_url": settings.FLUTTERWAVE_REDIRECT_URL,
-            "payment_options": payment.method,
-            "customer": {
-                "email": order.customer_email or "guest@example.com",
-                "name": order.customer_name or f"Customer {order.customer_identifier}"
-            },
-            "customizations": {
-                "title": "DineDash Payment",
-                "description": f"Payment for Order {order.id}",
-                "logo": settings.FLUTTERWAVE_LOGO_URL
-            }
-        }
-
-        headers = {
-            "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        # Call Flutterwave API
-        response = requests.post(
-            "https://api.flutterwave.com/v3/payments",
-            json=flutterwave_payload,
-            headers=headers
-        )
-
-        if response.status_code != 200:
-            return Response({"error": "Failed to initiate payment with Flutterwave."},
-                            status=status.HTTP_502_BAD_GATEWAY)
-
-        data = response.json()
-        if data.get("status") != "success":
-            return Response({"error": "Flutterwave payment initiation failed."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Save tx_ref for verification
-        payment.transaction_id = flutterwave_payload["tx_ref"]
-        payment.save()
-
+        # 3. Return a local URL that simulates the gateway redirect
+        # We include order_id in the redirect for robustness
+        mock_redirect_url = f"/api/payments/mock-verify/?tx_ref={tx_ref}&order_id={order.id}&status=successful"
+        
         return Response({
-            "payment_link": data['data']['link'],
-            "payment_id": payment.id,
-            "order_id": order.id
+            "status": "success",
+            "message": "Mock payment initiated. Redirecting for verification.",
+            "payment_link": mock_redirect_url, 
+            "tx_ref": tx_ref
         }, status=status.HTTP_200_OK)
 
 
-class FlutterwaveVerifyAPIView(generics.GenericAPIView):
+class MockVerifyAPIView(generics.GenericAPIView):
     """
-    Verifies a Flutterwave payment after redirect/callback.
-    Updates Payment and Order status.
+    Simulates the verification process after a successful gateway payment.
+    1. Locates the PENDING payment.
+    2. Marks payment as COMPLETED.
+    3. Updates order status to IN_PROGRESS.
     """
-    permission_classes = []  # allow Flutterwave to call this endpoint
+    permission_classes = [AllowAny] 
 
     def get(self, request, *args, **kwargs):
-        transaction_id = request.query_params.get('transaction_id')  # Flutterwave's transaction ID
-        tx_ref = request.query_params.get('tx_ref')  # our unique reference
+        tx_ref = request.query_params.get('tx_ref')
+        mock_status = request.query_params.get('status')
+        order_id = request.query_params.get('order_id') # Use this for better lookup
 
-        if not transaction_id or not tx_ref:
-            return Response({"error": "transaction_id and tx_ref are required."},
+        if not tx_ref or not mock_status:
+            return Response({"error": "Missing transaction reference or status."}, 
                             status=status.HTTP_400_BAD_REQUEST)
 
-        headers = {
-            "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}"
-        }
-
-        # Verify with Flutterwave
-        response = requests.get(
-            f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify",
-            headers=headers
-        )
-
-        if response.status_code != 200:
-            return Response({"error": "Failed to verify payment with Flutterwave."},
-                            status=status.HTTP_502_BAD_GATEWAY)
-
-        data = response.json()
-        status_str = data.get("data", {}).get("status")
-
-        # Get our payment using tx_ref
         try:
-            payment = Payment.objects.get(transaction_id=tx_ref)
+            with transaction.atomic():
+                # 1. Locate Payment Record (Using tx_ref and order_id)
+                payment = Payment.objects.select_related('order').get(
+                    transaction_ref=tx_ref,
+                    order_id=order_id # Better lookup ensures correctness
+                ) 
+                order = payment.order
+                
+                # Check for idempotency (prevent double processing)
+                if payment.status == Payment.STATUS_COMPLETED:
+                     return Response({
+                         "message": "Payment already verified successfully.",
+                         "order_id": order.id
+                     }, status=status.HTTP_200_OK)
+
+                # 2. Simulate Success Logic
+                if mock_status.lower() == "successful":
+                    
+                    # Update Payment Status
+                    payment.status = Payment.STATUS_COMPLETED
+                    payment.transaction_id = f"MOCK-SUCCESS-{tx_ref}"
+                    payment.save()
+
+                    # Update Order Status
+                    order.status = Order.STATUS_IN_PROGRESS # Use the constant you defined
+                    order.save()
+
+                    return Response({
+                        "message": "Mock Payment successful and verified.",
+                        "order": PaymentSerializer(payment).data # Return payment details
+                    }, status=status.HTTP_200_OK)
+
+                # 3. Simulate Failure Logic
+                else:
+                    payment.status = Payment.STATUS_FAILED 
+                    payment.save()
+                    
+                    # Note: Order status remains PENDING/unchanged on payment failure
+                    return Response({
+                        "error": "Mock verification failed.",
+                        "tx_ref": tx_ref
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
         except Payment.DoesNotExist:
-            return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if status_str == "successful":
-            payment.status = Payment.STATUS_COMPLETED
-            payment.save()
-
-            order = payment.order
-            order.status = 'completed'
-            order.save()
-
-            return Response({
-                "message": "Payment verified successfully.",
-                "order_id": order.id
-            }, status=status.HTTP_200_OK)
-
-        else:
-            payment.status = Payment.STATUS_FAILED
-            payment.save()
-            return Response({"error": "Payment verification failed or pending."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Mock payment record for reference '{tx_ref}' not found."}, 
+                            status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"An unexpected error occurred during verification: {e}"}, 
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,24 +1,28 @@
 from django.db import models
 import uuid
-from meals.models import Meal
-
+import random
+from meals.models import Meal 
+from django.conf import settings 
 
 class Order(models.Model):
     """
     Represents a customer order in the system.
-    An order can be 'dine in' or 'take-out', and has a status
-    indicating its progress.
     """
-
+    
+    # --- Status Choices (Ensuring Fulfillment Clarity) ---
     STATUS_PENDING = 'pending'
     STATUS_IN_PROGRESS = 'in_progress'
-    STATUS_COMPLETED = 'completed'
+    STATUS_READY = 'ready'            # Ready for handover/pickup
+    STATUS_DELIVERED = 'delivered'    # Delivery complete
+    STATUS_COMPLETED = 'completed'    # Final status (Dine-in/Pickup completion)
     STATUS_CANCELLED = 'cancelled'
 
     STATUS_CHOICES = [
-        (STATUS_PENDING, 'Pending'),
-        (STATUS_IN_PROGRESS, 'In Progress'),
-        (STATUS_COMPLETED, 'Completed'),
+        (STATUS_PENDING, 'Pending Payment/Confirmation'),
+        (STATUS_IN_PROGRESS, 'In Progress (Kitchen)'),
+        (STATUS_READY, 'Ready for Handover'),
+        (STATUS_DELIVERED, 'Delivered'),
+        (STATUS_COMPLETED, 'Completed/Closed'),
         (STATUS_CANCELLED, 'Cancelled'),
     ]
 
@@ -33,70 +37,53 @@ class Order(models.Model):
         (TYPE_DELIVERY, 'Delivery'),
         (TYPE_PICKUP, 'Pickup'),
     ]
+    
+    # --- Relationships ---
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='placed_orders',
+        help_text="The registered user who placed the order."
+    )
 
+    # --- Customer and Logistics ---
     customer_identifier = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True,
-        help_text="Unique identifier for the customer, useful for anonymous or guest orders."
+        help_text="Unique identifier for the customer, useful for guest orders."
     )
+
+    tracking_code = models.CharField(
+        max_length=12,
+        unique=True,
+        editable=False,
+        default=lambda: uuid.uuid4().hex[:8].upper(),  
+        help_text="Short code for customers to track their order."
+    )
+
     customer_name = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Customer name or table number. Optional for guest orders."
-    )
-    customer_email = models.EmailField(
-        blank=True,
         null=True,
-        help_text="Customer email address (needed for payments and receipts)."
+        help_text="Customer name or table number."
     )
-    contact_phone = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Customer contact phone number."
-    )
-    table_number = models.CharField(
-        max_length=10,
-        blank=True,
-        help_text="Table number for dine-in orders."
-    )
-    delivery_address = models.TextField(
-        blank=True,
-        help_text="Delivery address for delivery orders."
-    )
-    delivery_instructions = models.TextField(
-        blank=True,
-        help_text="Special delivery instructions."
-    )
-    pickup_time = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Preferred pickup time for takeaway/pickup orders."
-    )
-    delivery_fee = models.DecimalField(
-        max_digits=6,
-        decimal_places=2,
-        default=0.00,
-        help_text="Delivery fee for delivery orders."
-    )
-    order_type = models.CharField(
-        max_length=10,
-        choices=ORDER_TYPE_CHOICES,
-        default=TYPE_DINE_IN,
-        help_text="Type of order: Dine In, Takeaway, Delivery, or Pickup."
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default=STATUS_PENDING,
-        help_text="Current status of the order."
-    )
-    total_amount = models.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        default=0.00,
-        help_text="Total amount for the order, calculated from OrderItems."
-    )
+    customer_email = models.EmailField(blank=True, null=True)
+    contact_phone = models.CharField(max_length=20, blank=True, null=True)
+    table_number = models.CharField(max_length=10, blank=True, null=True)
+    delivery_address = models.TextField(blank=True, null=True)
+    delivery_instructions = models.TextField(blank=True, null=True)
+    pickup_time = models.DateTimeField(null=True, blank=True)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    # --- Core Status and Pricing ---
+    order_type = models.CharField(max_length=10, choices=ORDER_TYPE_CHOICES, default=TYPE_DINE_IN)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    # --- Timestamps ---
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -104,35 +91,37 @@ class Order(models.Model):
         verbose_name = "Order"
         verbose_name_plural = "Orders"
 
+    def save(self, *args, **kwargs):
+        # Generate tracking code if not already set
+        if not self.tracking_code:
+            while True:
+                code = f"ORD{random.randint(10000, 99999)}"
+                if not Order.objects.filter(tracking_code=code).exists():
+                    self.tracking_code = code
+                    break
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"Order {self.id} - {self.customer_name or self.customer_identifier}"
+        return f"{self.tracking_code} - {self.customer_name or self.customer_identifier}"
 
 
 class OrderItem(models.Model):
     """
     Represents an individual meal item within an order.
-    Each OrderItem is linked to a Meal and belongs to an Order.
     """
+    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
+    meal = models.ForeignKey(Meal, on_delete=models.SET_NULL, null=True)
+    item_name = models.CharField(max_length=255)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)
 
-    order = models.ForeignKey(
-        Order,
-        related_name='items',
-        on_delete=models.CASCADE,
-        help_text="The order this item belongs to."
-    )
-    meal = models.ForeignKey(
-        Meal,
-        on_delete=models.CASCADE,
-        help_text="The meal included in this order item."
-    )
-    quantity = models.PositiveBigIntegerField(
-        default=1,
-        help_text="Number of units of the meal in this order item."
-    )
+    @property
+    def total_price(self):
+        return self.unit_price * self.quantity
 
     class Meta:
         verbose_name = "Order Item"
         verbose_name_plural = "Order Items"
 
     def __str__(self):
-        return f"{self.quantity} x {self.meal.name} (Order {self.order.id})"
+        return f"{self.quantity} x {self.item_name} ({self.order.tracking_code})"

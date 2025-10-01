@@ -100,10 +100,12 @@ const CartDrawer = ({
         }
       };
 
+      console.log('Placing order with payload:', checkoutPayload);
       const response = await apiService.checkout(checkoutPayload);
+      console.log('Order placed successfully:', response);
 
       // Fetch the created order for tracking
-      const fetched = await apiService.getOrder(response.order.id);
+      const fetched = await apiService.getOrder(response.order.tracking_code);
       setFetchedOrder(fetched);
 
       dispatch(setLastOrderId(response.order.id));
@@ -280,7 +282,7 @@ const CartDrawer = ({
                       <div className="mt-1 flex items-center justify-between text-sm sm:text-base">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-green-600">
-                            ${item.price ? Number(item.price).toFixed(2) : '0.00'}
+                            ₵{item.price ? Number(item.price).toFixed(2) : '0.00'}
                           </span>
                           <span className="text-xs sm:text-sm text-gray-500">{item.qty ?? 1}x</span>
                         </div>

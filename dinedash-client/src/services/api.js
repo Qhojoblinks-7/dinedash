@@ -90,7 +90,7 @@ export const apiService = {
   // Initiate payment for an order
   initiatePayment: async (orderId, paymentMethod) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/payments/pay/`, {
+      const response = await fetch(`${API_BASE_URL}/api/payments/mock-pay/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

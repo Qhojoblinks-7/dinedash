@@ -53,13 +53,13 @@ const Dashboard = () => {
     fetchTables();
   }, [dispatch, addToast]);
 
-  // Periodic polling for orders (every 30 seconds)
+  // Periodic polling for orders (every 1 second)
   useEffect(() => {
     const pollOrders = () => {
       dispatch(fetchOrders());
     };
 
-    const interval = setInterval(pollOrders, 30000); // 30 seconds
+    const interval = setInterval(pollOrders, 1000); // 1 second
     return () => clearInterval(interval);
   }, [dispatch]);
 
