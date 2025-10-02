@@ -5,6 +5,7 @@ from .views import (
     OrderRetrieveAPIView,
     CheckoutAPIView,
     StaffOrderRetrieveAPIView,
+    OrderStatusUpdateAPIView,
 )
 
 app_name = "orders"  # Optional: allows namespacing URLs for reverse lookups
@@ -21,6 +22,9 @@ urlpatterns = [
 
     # Staff retrieve by internal DB ID
     path('staff/<int:pk>/', StaffOrderRetrieveAPIView.as_view(), name='staff-order-detail'),
+
+    # Update order status by internal ID
+    path('<int:id>/status/', OrderStatusUpdateAPIView.as_view(), name='order-status-update'),
 
     # Checkout endpoint
     path('checkout/', CheckoutAPIView.as_view(), name='checkout'),
