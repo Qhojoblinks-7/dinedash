@@ -7,10 +7,7 @@ import MenuItemCard from './ui/MenuItemCard';
 import { useToast } from './ui/toastContext';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchMeals } from '../store/mealsSlice';
-import { fetchOrders } from '../store/ordersSlice';
-import { apiService } from '../services/api';
-
-// --- Data Fetching and State ---
+import { fetchOrders, updateOrderStatus, finalizePayment } from '../store/ordersSlice';
 
 // --- Dashboard Component ---
 const Dashboard = () => {
@@ -21,45 +18,23 @@ const Dashboard = () => {
   const { meals: menuItems, loading: mealsLoading, error: mealsError } = useSelector(state => state.meals);
   const { orders, loading: ordersLoading, error: ordersError } = useSelector(state => state.orders);
 
-  // Local state for tables
-  const [activeTables, setActiveTables] = useState([]);
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [tablesLoading, setTablesLoading] = useState(true);
+  // Local state for orders
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Fetch data on component mount
   useEffect(() => {
     // Dispatch Redux actions to fetch meals and orders
     dispatch(fetchMeals());
     dispatch(fetchOrders());
+  }, [dispatch]);
 
-    // Fetch tables locally
-    const fetchTables = async () => {
-      try {
-        setTablesLoading(true);
-        const tablesResponse = await apiService.getTables();
-        setActiveTables(tablesResponse);
-      } catch (err) {
-        console.error('Error fetching tables:', err);
-        addToast({
-          type: 'error',
-          title: 'Data Loading Error',
-          message: 'Failed to load tables data'
-        });
-      } finally {
-        setTablesLoading(false);
-      }
-    };
-
-    fetchTables();
-  }, [dispatch, addToast]);
-
-  // Periodic polling for orders (every 1 second)
+  // Periodic polling for orders (every 30 seconds)
   useEffect(() => {
     const pollOrders = () => {
       dispatch(fetchOrders());
     };
 
-    const interval = setInterval(pollOrders, 1000); // 1 second
+    const interval = setInterval(pollOrders, 30000); // 30 seconds
     return () => clearInterval(interval);
   }, [dispatch]);
 
@@ -99,13 +74,51 @@ const Dashboard = () => {
     }]
   }));
 
-  const loading = mealsLoading || tablesLoading || ordersLoading;
+  const loading = mealsLoading || ordersLoading;
   const error = mealsError || ordersError;
 
-
-  const handleTableClick = (table) => {
-    setSelectedTable(table);
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
   };
+
+  const handleSendToKitchen = async () => {
+    if (selectedOrder) {
+      try {
+        await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'sentToKitchen' })).unwrap();
+        addToast('Order sent to kitchen successfully!', 'success');
+      } catch (error) {
+        addToast('Failed to send order to kitchen.', 'error');
+      }
+    }
+  };
+
+  const handleFinalizePayment = async (paymentMethod) => {
+    if (selectedOrder) {
+      try {
+        await dispatch(finalizePayment({ orderId: selectedOrder.id, paymentMethod, amount: selectedOrder.totalAmount })).unwrap();
+        await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'completed' })).unwrap();
+        addToast('Payment finalized successfully!', 'success');
+      } catch (error) {
+        addToast(error || 'Failed to finalize payment.', 'error');
+      }
+    }
+  };
+
+  const tableDetails = selectedOrder ? {
+    tableNumber: selectedOrder.tracking_code,
+    orderType: selectedOrder.order_type,
+    status: selectedOrder.status,
+  } : null;
+
+  const orderDetails = selectedOrder ? {
+    tableNumber: selectedOrder.tracking_code,
+    orderType: selectedOrder.order_type,
+    items: selectedOrder.items || [],
+    subtotal: parseFloat(selectedOrder.total_amount) - parseFloat(selectedOrder.delivery_fee || 0),
+    tax: 0,
+    totalAmount: parseFloat(selectedOrder.total_amount),
+    paymentMethod: selectedOrder.payment_method,
+  } : null;
 
   return (
     <div className="flex bg-gray-50 min-h-screen relative">
@@ -140,27 +153,20 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-      
+
       {/* Footer */}
-      <TableStatus activeTables={activeTables} onPlaceOrder={() => handleTableClick(activeTables[0])} />
+      <TableStatus activeOrders={orders} onSelectOrder={handleOrderClick} />
 
       {/* Right Sidebar - Conditional and Dynamic */}
-      {selectedTable && (
+      {selectedOrder && (
         <OrderDetailsPanel
-          isOpen={true} // Panel will now be truly open when selectedTable is set
-          tableDetails={selectedTable}
-          orderDetails={{
-            tableNumber: selectedTable.tableNumber,
-            orderType: 'Dine In',
-            items: [], // Will be populated when orders are properly linked to tables
-            subtotal: 0,
-            tax: 0,
-            totalAmount: 0,
-          }}
+          isOpen={true}
+          tableDetails={tableDetails}
+          orderDetails={orderDetails}
           onRemoveItem={() => {}}
-          onSendToKitchen={() => {}}
-          onFinalizePayment={() => {}}
-          onClose={() => setSelectedTable(null)}
+          onSendToKitchen={handleSendToKitchen}
+          onFinalizePayment={handleFinalizePayment}
+          onClose={() => setSelectedOrder(null)}
         />
       )}
     </div>

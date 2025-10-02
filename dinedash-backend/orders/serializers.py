@@ -3,21 +3,27 @@ from django.db import transaction
 from decimal import Decimal
 from .models import Order, OrderItem
 from meals.models import Meal
+from payments.models import Payment
 
 
 # --- READ/DISPLAY SERIALIZERS ---
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    """ Read-only serializer for individual items. 
+    """ Read-only serializer for individual items.
         Uses stored item_name/unit_price for historical accuracy. """
     class Meta:
         model = OrderItem
-        fields = ['item_name', 'quantity', 'unit_price']
+        fields = ['meal', 'item_name', 'quantity', 'unit_price']
 
 
 class OrderSerializer(serializers.ModelSerializer):
     """ General read-only serializer for Order objects. """
     items = OrderItemSerializer(many=True, read_only=True)
+    payment_method = serializers.SerializerMethodField()
+
+    def get_payment_method(self, obj):
+        payment = obj.payments.first()  # Get the first payment associated with the order
+        return payment.method if payment else None
 
     class Meta:
         model = Order
@@ -36,8 +42,18 @@ class OrderSerializer(serializers.ModelSerializer):
             'pickup_time',
             'created_at',
             'items',
+            'payment_method',
         ]
         read_only_fields = ['tracking_code', 'status', 'total_amount', 'created_at']
+
+
+# --- UPDATE SERIALIZERS ---
+
+class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    """ Serializer for updating only the order status. """
+    class Meta:
+        model = Order
+        fields = ['status']
 
 
 # --- WRITE/CREATE SERIALIZERS ---

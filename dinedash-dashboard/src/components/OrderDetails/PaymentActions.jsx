@@ -34,7 +34,7 @@ const PaymentActions = ({ onSendToKitchen, onFinalizePayment, orderIsSent }) => 
           Send to Kitchen
         </button>
       ) : (
-        <button onClick={onFinalizePayment} disabled={!selectedPayment} className={`w-full mt-4 py-3 rounded-lg font-bold transition-colors ${!selectedPayment ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
+        <button onClick={() => onFinalizePayment(selectedPayment)} disabled={!selectedPayment} className={`w-full mt-4 py-3 rounded-lg font-bold transition-colors ${!selectedPayment ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
           Finalize Payment
         </button>
       )}

@@ -58,9 +58,8 @@ class Order(models.Model):
 
     tracking_code = models.CharField(
         max_length=12,
-        unique=True,
         editable=False,
-        default=lambda: uuid.uuid4().hex[:8].upper(),  
+        # default=lambda: uuid.uuid4().hex[:8].upper(),  
         help_text="Short code for customers to track their order."
     )
 
@@ -111,8 +110,8 @@ class OrderItem(models.Model):
     """
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     meal = models.ForeignKey(Meal, on_delete=models.SET_NULL, null=True)
-    item_name = models.CharField(max_length=255)
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    item_name = models.CharField(max_length=255, default='Unknown Item')
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     quantity = models.PositiveIntegerField(default=1)
 
     @property

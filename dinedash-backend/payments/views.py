@@ -2,7 +2,8 @@ import uuid
 from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAdminUser 
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.decorators import api_view, permission_classes
 
 from orders.models import Order 
 from .models import Payment
@@ -137,5 +138,61 @@ class MockVerifyAPIView(generics.GenericAPIView):
             return Response({"error": f"Mock payment record for reference '{tx_ref}' not found."}, 
                             status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": f"An unexpected error occurred during verification: {e}"}, 
+            return Response({"error": f"An unexpected error occurred during verification: {e}"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def finalize_payment(request):
+    """
+    API endpoint for staff/admin to finalize payment for an order.
+    Creates a completed payment record and updates order status.
+    """
+    order_id = request.data.get('order_id')
+    payment_method = request.data.get('payment_method')
+    amount = request.data.get('amount')
+
+    if not all([order_id, payment_method, amount]):
+        return Response({"error": "order_id, payment_method, and amount are required."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():
+            order = Order.objects.get(id=order_id)
+
+            # Check if order is in sentToKitchen status
+            if order.status != 'sentToKitchen':
+                return Response({"error": "Order must be sent to kitchen before payment can be finalized."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if payment already exists
+            if Payment.objects.filter(order=order, status=Payment.STATUS_COMPLETED).exists():
+                return Response({"error": "Payment already finalized for this order."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # Create completed payment record
+            tx_ref = f"STAFF-{order.id}-{uuid.uuid4().hex[:6]}"
+            payment = Payment.objects.create(
+                order=order,
+                amount=amount,
+                method=payment_method,
+                status=Payment.STATUS_COMPLETED,
+                transaction_ref=tx_ref,
+                transaction_id=f"STAFF-COMPLETE-{tx_ref}"
+            )
+
+            # Update order status to completed
+            order.status = 'completed'
+            order.save()
+
+            return Response({
+                "message": "Payment finalized successfully.",
+                "payment": PaymentSerializer(payment).data
+            }, status=status.HTTP_200_OK)
+
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": f"An unexpected error occurred: {e}"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
