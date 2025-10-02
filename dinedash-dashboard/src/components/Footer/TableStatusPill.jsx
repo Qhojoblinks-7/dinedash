@@ -6,13 +6,17 @@ const statusStyles = {
   'serving': 'bg-green-100 text-green-700',
 };
 
-const TableStatusPill = ({ tableNumber, status }) => {
+const TableStatusPill = ({ tableNumber, status, customerName, onClick }) => {
   const pillClasses = statusStyles[status.toLowerCase()] || 'bg-gray-100 text-gray-700';
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-1 rounded-full font-semibold text-xs ${pillClasses}`}>
+    <div
+      className={`flex items-center gap-2 px-3 py-1 rounded-full font-semibold text-xs ${pillClasses} cursor-pointer hover:opacity-80 transition-opacity`}
+      onClick={onClick}
+    >
       <span>{tableNumber}</span>
-      <span className="hidden sm:inline">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+      {customerName && <span className="hidden sm:inline">{customerName}</span>}
+      <span className="hidden md:inline">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
     </div>
   );
 };
