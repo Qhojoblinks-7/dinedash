@@ -104,6 +104,17 @@ const Dashboard = () => {
     }
   };
 
+  const handleSendToKitchen = async (orderId) => {
+    try {
+      await apiService.updateOrderStatus(orderId, 'in_progress');
+      dispatch(fetchOrders());
+      addToast({ type: 'success', title: 'Order sent', message: 'Order sent to kitchen.' });
+    } catch (err) {
+      console.error('Failed to update order status', err);
+      addToast({ type: 'error', title: 'Update failed', message: 'Could not send order to kitchen.' });
+    }
+  };
+
   const tableDetails = selectedOrder ? {
     tableNumber: selectedOrder.tracking_code,
     orderType: selectedOrder.order_type,
@@ -164,6 +175,17 @@ const Dashboard = () => {
           tableDetails={tableDetails}
           orderDetails={orderDetails}
           onRemoveItem={() => {}}
+          onSendToKitchen={() => {
+            // TODO: wire selected order id; using first order as placeholder
+            const firstOrderId = orders?.[0]?.id;
+            if (firstOrderId) {
+              handleSendToKitchen(firstOrderId);
+            } else {
+              addToast({ type: 'error', title: 'No order', message: 'No order to send.' });
+            }
+          }}
+          onFinalizePayment={() => {}}
+          onClose={() => setSelectedTable(null)}
           onSendToKitchen={handleSendToKitchen}
           onFinalizePayment={handleFinalizePayment}
           onClose={() => setSelectedOrder(null)}

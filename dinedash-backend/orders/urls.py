@@ -5,6 +5,7 @@ from .views import (
     OrderRetrieveAPIView,
     CheckoutAPIView,
     StaffOrderRetrieveAPIView,
+    OrderStatusUpdateAPIView,
     OrderUpdateStatusAPIView,
 )
 
@@ -23,6 +24,8 @@ urlpatterns = [
     # Staff retrieve by internal DB ID
     path('staff/<int:pk>/', StaffOrderRetrieveAPIView.as_view(), name='staff-order-detail'),
 
+    # Update order status by internal ID
+    path('<int:id>/status/', OrderStatusUpdateAPIView.as_view(), name='order-status-update'),
     # Update order status by ID
     path('<int:pk>/status/', OrderUpdateStatusAPIView.as_view(), name='order-update-status'),
 

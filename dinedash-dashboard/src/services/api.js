@@ -52,6 +52,13 @@ class ApiService {
     });
   }
 
+  async updateOrderStatus(id, status) {
+    return this.request(`/orders/${id}/status/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
   async checkout(checkoutData) {
     return this.request('/orders/checkout/', {
       method: 'POST',

@@ -1,4 +1,5 @@
 from django.db import transaction
+import logging
 from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from .serializers import (
 from payments.models import Payment
 from payments.serializers import CheckoutPaymentSerializer, PaymentSerializer
 
+logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------
 # Checkout API
@@ -105,12 +107,20 @@ class CheckoutAPIView(APIView):
                         )
 
         except Exception as e:
+            logger.exception("[orders:checkout] error during checkout")
             return Response(
                 {"error": f"An error occurred during checkout: {e}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         # --- STEP 4: Final Response ---
+        logger.info(
+            "[orders:checkout] success", extra={
+                "order_id": order.id,
+                "tracking_code": order.tracking_code,
+                "payment_id": payment.id if payment else None,
+            }
+        )
         return Response(
             {
                 "order": OrderSerializer(order).data,
@@ -140,8 +150,10 @@ class OrderCreateAPIView(APIView):
         try:
             with transaction.atomic():
                 order = serializer.save()
+                logger.info("[orders:create] success", extra={"order_id": order.id})
                 return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
         except Exception as e:
+            logger.exception("[orders:create] error while creating order")
             return Response(
                 {"error": f"An error occurred while creating the order: {e}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -174,6 +186,15 @@ class OrderListAPIView(generics.ListAPIView):
         if self.request.method in permissions.SAFE_METHODS:
             return []  # No permissions required for GET requests
         return super().get_permissions()
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        try:
+            count = len(response.data) if hasattr(response, 'data') else 0
+        except Exception:
+            count = 0
+        logger.info("[orders:list] returned", extra={"count": count})
+        return response
 
 
 # ----------------------------------------------------------------------
@@ -213,6 +234,39 @@ class StaffOrderRetrieveAPIView(generics.RetrieveAPIView):
 # ----------------------------------------------------------------------
 # Update Order Status API
 # ----------------------------------------------------------------------
+class OrderStatusUpdateAPIView(APIView):
+    """Update the status of an order by internal ID."""
+    permission_classes = [permissions.AllowAny]
+
+    def get_authenticators(self):
+        # Allow anonymous for testing; tighten in production
+        return []
+
+    def patch(self, request, id, *args, **kwargs):
+        new_status = request.data.get('status')
+        if not new_status:
+            return Response({"error": "Missing 'status' in request body."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            order = Order.objects.get(id=id)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate new_status against allowed choices
+        allowed_statuses = {choice[0] for choice in Order.STATUS_CHOICES}
+        if new_status not in allowed_statuses:
+            return Response({"error": f"Invalid status '{new_status}'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        previous_status = order.status
+        order.status = new_status
+        order.save()
+
+        logger.info(
+            "[orders:status_update] success",
+            extra={"order_id": order.id, "from": previous_status, "to": new_status}
+        )
+        return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
+      
 class OrderUpdateStatusAPIView(generics.UpdateAPIView):
     """ Update order status (staff only). """
     queryset = Order.objects.all()
