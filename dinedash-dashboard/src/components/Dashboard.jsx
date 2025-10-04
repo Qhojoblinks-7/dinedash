@@ -107,17 +107,20 @@ const Dashboard = () => {
   });
 
 
-  const transformedMenuItems = filteredMeals.map(meal => ({
-    id: meal.id.toString(),
-    name: meal.name,
-    description: meal.description || '',
-    image: meal.image ? `http://localhost:8000${meal.image}` : null,
-    price: parseFloat(meal.price),
-    categoryId: meal.category || 'main',
-    isAvailable: meal.is_available,
-    isVeg: meal.is_veg,
-    orderedQuantity: orderedQuantities[meal.id.toString()] || 0,
-  }));
+  const transformedMenuItems = filteredMeals.map(meal => {
+    console.log('meal.is_veg:', meal.is_veg, 'type:', typeof meal.is_veg, 'for meal:', meal.name);
+    return {
+      id: meal.id.toString(),
+      name: meal.name,
+      description: meal.description || '',
+      image: meal.image ? `http://localhost:8000${meal.image}` : null,
+      price: parseFloat(meal.price),
+      categoryId: meal.category || 'main',
+      isAvailable: meal.is_available,
+      isVeg: meal.is_veg,
+      orderedQuantity: orderedQuantities[meal.id.toString()] || 0,
+    };
+  });
 
   const loading = mealsLoading || ordersLoading;
   const error = mealsError || ordersError;
