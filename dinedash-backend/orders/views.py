@@ -17,48 +17,32 @@ from payments.serializers import CheckoutPaymentSerializer, PaymentSerializer
 
 logger = logging.getLogger(__name__)
 
-# ----------------------------------------------------------------------
-# Checkout API
-# ----------------------------------------------------------------------
+
 class CheckoutAPIView(APIView):
-    """
-    Handle complete checkout process atomically.
-    1. Creates Order and all OrderItems.
-    2. Validates Payment data.
-    3. Creates PENDING Payment record (or COMPLETED for mock/cash).
-    """
+    """Handle checkout process."""
     permission_classes = [permissions.AllowAny]
 
     def get_authenticators(self):
-        """
-        Allow anonymous access for checkout.
-        """
         return []
 
     def post(self, request, *args, **kwargs):
         order_data = request.data.get('order', {})
         payment_data = request.data.get('payment', {})
 
-        # --- STEP 1: Validate Order Data (Outside Transaction) ---
         order_serializer = OrderCreateSerializer(data=order_data)
         order_serializer.is_valid(raise_exception=True)
 
-        # --- STEP 2: Validate Payment Data (Outside Transaction) ---
         payment_serializer = CheckoutPaymentSerializer(data=payment_data)
         payment_serializer.is_valid(raise_exception=True)
         payment_validated_data = payment_serializer.validated_data
 
-        payment = None  # Initialize for final response
+        payment = None
 
         try:
             with transaction.atomic():
-                # A. Create the Order
                 order = order_serializer.save()
-
-                # B. Calculate final amount (items + delivery fee)
                 final_amount = order.total_amount + order.delivery_fee
 
-                # C. Create Payment record
                 payment_method = payment_validated_data.get('method', 'cash')
                 initial_status = (
                     Payment.STATUS_COMPLETED
@@ -74,12 +58,10 @@ class CheckoutAPIView(APIView):
                     **payment_validated_data,
                 )
 
-                # D. Update order status for cash
                 if payment.status == Payment.STATUS_COMPLETED:
                     order.status = Order.STATUS_IN_PROGRESS
                     order.save()
 
-                # E. Simulate payment (mock)
                 if payment_method != Payment.METHOD_CASH:
                     tx_ref = f"MOCK-PAY-{order.id}-{uuid.uuid4().hex[:6]}"
                     payment.transaction_ref = tx_ref
@@ -107,20 +89,12 @@ class CheckoutAPIView(APIView):
                         )
 
         except Exception as e:
-            logger.exception("[orders:checkout] error during checkout")
+            logger.exception("Checkout error")
             return Response(
-                {"error": f"An error occurred during checkout: {e}"},
+                {"error": f"Checkout failed: {e}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        # --- STEP 4: Final Response ---
-        logger.info(
-            "[orders:checkout] success", extra={
-                "order_id": order.id,
-                "tracking_code": order.tracking_code,
-                "payment_id": payment.id if payment else None,
-            }
-        )
         return Response(
             {
                 "order": OrderSerializer(order).data,
@@ -136,11 +110,8 @@ class CheckoutAPIView(APIView):
         )
 
 
-# ----------------------------------------------------------------------
-# Create Order API
-# ----------------------------------------------------------------------
 class OrderCreateAPIView(APIView):
-    """ Create a new order with items atomically. """
+    """Create a new order."""
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -150,61 +121,38 @@ class OrderCreateAPIView(APIView):
         try:
             with transaction.atomic():
                 order = serializer.save()
-                logger.info("[orders:create] success", extra={"order_id": order.id})
                 return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            logger.exception("[orders:create] error while creating order")
+            logger.exception("Order creation error")
             return Response(
-                {"error": f"An error occurred while creating the order: {e}"},
+                {"error": f"Order creation failed: {e}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
-# ----------------------------------------------------------------------
-# List Orders API
-# ----------------------------------------------------------------------
 class OrderListAPIView(generics.ListAPIView):
-    """ List all orders (staff only). """
+    """List all orders."""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAdminUser]
 
     def get_authenticators(self):
-        """
-        Allow anonymous access for GET requests (for testing purposes).
-        In production, this should require proper authentication.
-        """
         if self.request.method in permissions.SAFE_METHODS:
-            return []  # No authentication required for GET requests
+            return []
         return super().get_authenticators()
 
     def get_permissions(self):
-        """
-        Allow anonymous access for GET requests (for testing purposes).
-        In production, this should require proper authentication.
-        """
         if self.request.method in permissions.SAFE_METHODS:
-            return []  # No permissions required for GET requests
+            return []
         return super().get_permissions()
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
-        try:
-            count = len(response.data) if hasattr(response, 'data') else 0
-        except Exception:
-            count = 0
-        logger.info("[orders:list] returned", extra={"count": count})
         return response
 
 
-# ----------------------------------------------------------------------
-# Retrieve Order API (by tracking code for guests)
-# ----------------------------------------------------------------------
 class OrderRetrieveAPIView(APIView):
-    """
-    Retrieve a single order by its tracking code.
-    Guests (no login) can use this to track their order.
-    """
+    """Retrieve order by tracking code."""
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, tracking_code, *args, **kwargs):
@@ -220,95 +168,40 @@ class OrderRetrieveAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# ----------------------------------------------------------------------
-# Staff Retrieve Order by ID (optional)
-# ----------------------------------------------------------------------
 class StaffOrderRetrieveAPIView(generics.RetrieveAPIView):
-    """ Retrieve a single order by internal ID (staff only). """
+    """Retrieve order by ID."""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAdminUser]
     lookup_field = 'id'
 
 
-# ----------------------------------------------------------------------
-# Update Order Status API
-# ----------------------------------------------------------------------
 class OrderStatusUpdateAPIView(APIView):
-    """Update the status of an order by internal ID."""
+    """Update order status."""
     permission_classes = [permissions.AllowAny]
 
     def get_authenticators(self):
-        # Allow anonymous for testing; tighten in production
         return []
 
     def patch(self, request, id, *args, **kwargs):
-        logger.info(f"[orders:status_update] request data: {request.data}")
         new_status = request.data.get('status')
         if not new_status:
-            return Response({"error": "Missing 'status' in request body."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Missing 'status'."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             order = Order.objects.get(id=id)
         except Order.DoesNotExist:
             return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Validate new_status against allowed choices
         allowed_statuses = {choice[0] for choice in Order.STATUS_CHOICES}
         if new_status not in allowed_statuses:
             return Response({"error": f"Invalid status '{new_status}'."}, status=status.HTTP_400_BAD_REQUEST)
 
-        previous_status = order.status
         order.status = new_status
         order.save()
 
-        logger.info(
-            "[orders:status_update] success",
-            extra={"order_id": order.id, "from": previous_status, "to": new_status}
-        )
         return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
       
-class OrderUpdateStatusAPIView(generics.UpdateAPIView):
-    """ Update order status (staff only). """
-    queryset = Order.objects.all()
-    serializer_class = None  # Will set in get_serializer_class
-    permission_classes = [permissions.IsAdminUser]
-    lookup_field = 'id'
-    http_method_names = ['patch']  # Only allow PATCH
-
-    def get_serializer_class(self):
-        from .serializers import OrderStatusUpdateSerializer
-        return OrderStatusUpdateSerializer
-
-    def get_authenticators(self):
-        """
-        Allow anonymous access for PATCH requests (for testing purposes).
-        In production, this should require proper authentication.
-        """
-        if self.request.method == 'PATCH':
-            return []  # No authentication required for PATCH requests
-        return super().get_authenticators()
-
-    def get_permissions(self):
-        """
-        Allow anonymous access for PATCH requests (for testing purposes).
-        In production, this should require proper authentication.
-        """
-        if self.request.method == 'PATCH':
-            return []  # No permissions required for PATCH requests
-        return super().get_permissions()
-
-    def patch(self, request, *args, **kwargs):
-        try:
-            return super().patch(request, *args, **kwargs)
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error updating order status: {e}", exc_info=True)
-            return Response(
-                {"error": "An error occurred while updating order status."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
 
 # ----------------------------------------------------------------------

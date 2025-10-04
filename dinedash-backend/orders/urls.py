@@ -6,7 +6,6 @@ from .views import (
     CheckoutAPIView,
     StaffOrderRetrieveAPIView,
     OrderStatusUpdateAPIView,
-    OrderUpdateStatusAPIView,
     AnalyticsAPIView,
 )
 
@@ -30,8 +29,6 @@ urlpatterns = [
 
     # Update order status by internal ID
     path('<int:id>/status/', OrderStatusUpdateAPIView.as_view(), name='order-status-update'),
-    # Update order status by ID
-    path('<int:pk>/status/', OrderUpdateStatusAPIView.as_view(), name='order-update-status'),
 
     # Checkout endpoint
     path('checkout/', CheckoutAPIView.as_view(), name='checkout'),
