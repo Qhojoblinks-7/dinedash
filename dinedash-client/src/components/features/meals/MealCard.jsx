@@ -1,4 +1,3 @@
-// src/components/meals/MealCardFixed.jsx
 import React, { useState } from 'react';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
@@ -19,7 +18,6 @@ const MealCard = ({
   available = true,
   readyInMinutes = null,
 }) => {
-  console.log(`MealCard for ${name}: isVeg =`, isVeg);
   const { addToast } = useToast();
   const dispatch = useDispatch();
   const [showAnimation, setShowAnimation] = useState(false);

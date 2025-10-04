@@ -19,8 +19,8 @@ function App (){
     if (savedOrders) {
       try {
         setOrders(JSON.parse(savedOrders));
-      } catch (error) {
-        console.error('Error loading orders from localStorage:', error);
+      } catch {
+        // Ignore invalid localStorage data
       }
     }
   }, []);

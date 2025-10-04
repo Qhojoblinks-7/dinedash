@@ -1,4 +1,3 @@
-// src/components/cart/CartDrawerBackend.jsx
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUtensils, faTimes, faCreditCard, faCheckCircle, faPencilAlt, faMoneyBillAlt, faQrcode } from '@fortawesome/free-solid-svg-icons';
@@ -96,8 +95,7 @@ const CartDrawerBackend = ({
         }
       }
 
-    } catch (error) {
-      console.error('Order creation failed:', error);
+    } catch {
       addToast({
         type: 'error',
         title: 'Order Failed',

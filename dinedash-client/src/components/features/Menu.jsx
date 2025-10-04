@@ -1,4 +1,3 @@
-// src/components/meals/Menu.jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import MealCard from './meals/MealCard';
@@ -20,81 +19,30 @@ const Menu = ({ onAdd, orderCount, onOpenCart }) => {
     dispatch(fetchMeals());
   }, [dispatch]);
 
-  console.log('Meals in Menu state:', meals);
+  const categoryFilters = {
+    burgers: (meal) => meal.name?.toLowerCase().includes('burger'),
+    soups: (meal) => meal.name?.toLowerCase().includes('soup'),
+    breakfast: (meal) => ['breakfast', 'egg', 'pancake'].some(keyword => meal.name?.toLowerCase().includes(keyword)),
+    main: (meal) => !['soup', 'burger', 'breakfast', 'pasta', 'drink', 'dessert'].some(keyword => meal.name?.toLowerCase().includes(keyword)),
+    pasta: (meal) => ['pasta', 'spaghetti'].some(keyword => meal.name?.toLowerCase().includes(keyword)),
+    drinks: (meal) => ['drink', 'juice', 'soda'].some(keyword => meal.name?.toLowerCase().includes(keyword)),
+    desserts: (meal) => ['cake', 'ice cream', 'dessert'].some(keyword => meal.name?.toLowerCase().includes(keyword)),
+    sides: (meal) => ['fries', 'salad', 'side'].some(keyword => meal.name?.toLowerCase().includes(keyword)),
+    specials: (meal) => ['special', 'featured'].some(keyword => meal.name?.toLowerCase().includes(keyword)),
+  };
 
-  // Filter meals based on category and search
   const filteredMeals = useMemo(() => {
     let filtered = meals;
 
-    // Category filter
-    if (selectedCategory !== 'all') {
-      switch (selectedCategory) {
-        case 'burgers':
-          filtered = filtered.filter(meal => meal.name?.toLowerCase().includes('burger'));
-          break;
-        case 'soups':
-          filtered = filtered.filter(meal => meal.name?.toLowerCase().includes('soup'));
-          break;
-        case 'breakfast':
-          filtered = filtered.filter(meal =>
-            meal.name?.toLowerCase().includes('breakfast') ||
-            meal.name?.toLowerCase().includes('egg') ||
-            meal.name?.toLowerCase().includes('pancake')
-          );
-          break;
-        case 'main':
-          filtered = filtered.filter(meal =>
-            !meal.name?.toLowerCase().includes('soup') &&
-            !meal.name?.toLowerCase().includes('burger') &&
-            !meal.name?.toLowerCase().includes('breakfast') &&
-            !meal.name?.toLowerCase().includes('pasta') &&
-            !meal.name?.toLowerCase().includes('drink') &&
-            !meal.name?.toLowerCase().includes('dessert')
-          );
-          break;
-        case 'pasta':
-          filtered = filtered.filter(meal =>
-            meal.name?.toLowerCase().includes('pasta') ||
-            meal.name?.toLowerCase().includes('spaghetti')
-          );
-          break;
-        case 'drinks':
-          filtered = filtered.filter(meal =>
-            meal.name?.toLowerCase().includes('drink') ||
-            meal.name?.toLowerCase().includes('juice') ||
-            meal.name?.toLowerCase().includes('soda')
-          );
-          break;
-        case 'desserts':
-          filtered = filtered.filter(meal =>
-            meal.name?.toLowerCase().includes('cake') ||
-            meal.name?.toLowerCase().includes('ice cream') ||
-            meal.name?.toLowerCase().includes('dessert')
-          );
-          break;
-        case 'sides':
-          filtered = filtered.filter(meal =>
-            meal.name?.toLowerCase().includes('fries') ||
-            meal.name?.toLowerCase().includes('salad') ||
-            meal.name?.toLowerCase().includes('side')
-          );
-          break;
-        case 'specials':
-          filtered = filtered.filter(meal =>
-            meal.name?.toLowerCase().includes('special') ||
-            meal.name?.toLowerCase().includes('featured')
-          );
-          break;
-        default:
-          break;
-      }
+    if (selectedCategory !== 'all' && categoryFilters[selectedCategory]) {
+      filtered = filtered.filter(categoryFilters[selectedCategory]);
     }
 
-    // Search filter
     if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(meal =>
-        meal.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        meal.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        meal.name?.toLowerCase().includes(query) ||
+        meal.description?.toLowerCase().includes(query)
       );
     }
 
@@ -148,15 +96,7 @@ const Menu = ({ onAdd, orderCount, onOpenCart }) => {
       />
 
       <div className="container mx-auto px-4 py-8">
-        {loading ? (
-          <div className="text-center py-12 text-lg text-gray-500">
-            Loading meals...
-          </div>
-        ) : error ? (
-          <div className="text-center py-12 text-red-500">
-            Failed to load meals: {error}
-          </div>
-        ) : filteredMeals.length === 0 ? (
+        {filteredMeals.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             {searchQuery ? `No meals found for "${searchQuery}"` : 'No meals available in this category'}
           </div>

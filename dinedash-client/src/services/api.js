@@ -1,138 +1,35 @@
-// API service for communicating with Django backend
 const API_BASE_URL = 'http://localhost:8000';
 
+const makeRequest = async (url, options = {}) => {
+  const response = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return await response.json();
+};
+
 export const apiService = {
-  // Create a new order
-  createOrder: async (orderData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/create/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
-      });
+  createOrder: (orderData) => makeRequest(`${API_BASE_URL}/api/orders/create/`, {
+    method: 'POST',
+    body: JSON.stringify(orderData),
+  }),
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  getMeals: () => makeRequest(`${API_BASE_URL}/api/meals/`),
 
-      return await response.json();
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
-  },
+  getOrders: () => makeRequest(`${API_BASE_URL}/api/orders/`),
 
-  // Get all meals
-  getMeals: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/meals/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+  getOrder: (orderId) => makeRequest(`${API_BASE_URL}/api/orders/${orderId}/`),
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  initiatePayment: (orderId, paymentMethod) => makeRequest(`${API_BASE_URL}/api/payments/mock-pay/`, {
+    method: 'POST',
+    body: JSON.stringify({ order_id: orderId, payment_method: paymentMethod }),
+  }),
 
-      return await response.json();
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
-  },
-
-  // Get all orders (staff only)
-  getOrders: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
-  },
-
-  // Get a single order by ID
-  getOrder: async (orderId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
-  },
-
-  // Initiate payment for an order
-  initiatePayment: async (orderId, paymentMethod) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/payments/mock-pay/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          order_id: orderId,
-          payment_method: paymentMethod,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
-  },
-
-  // Complete checkout process
-  checkout: async (checkoutData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/checkout/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(checkoutData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
-  }
+  checkout: (checkoutData) => makeRequest(`${API_BASE_URL}/api/orders/checkout/`, {
+    method: 'POST',
+    body: JSON.stringify(checkoutData),
+  }),
 };
 
 export default apiService;

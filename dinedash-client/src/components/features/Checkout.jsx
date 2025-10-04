@@ -101,7 +101,6 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
         transaction_ref: payment.transactionRef,
       };
 
-      // Use the onCheckout prop from App.jsx
       await onCheckout(checkoutPayload);
 
       dispatch(clearCart());
@@ -113,8 +112,7 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
 
       if (onSuccess) onSuccess();
       onClose();
-    } catch (error) {
-      console.error('Checkout failed:', error);
+    } catch {
       addToast({ type: 'error', title: 'Checkout Failed', message: 'Failed to process your order. Please try again.' });
     } finally {
       setIsSubmitting(false);

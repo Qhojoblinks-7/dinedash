@@ -33,12 +33,11 @@ const CartDrawer = ({
   const [tableNo, setTableNo] = useState('Table 4');
   const [customerName, setCustomerName] = useState('Floyd Miles');
   const [fetchedOrder, setFetchedOrder] = useState(null);
-  const [trackingCode, setTrackingCode] = useState('');
-  const [showTrackingInput, setShowTrackingInput] = useState(false);
-  const [showTrackingModal, setShowTrackingModal] = useState(false);
+   const [trackingCode, setTrackingCode] = useState('');
+   const [showTrackingInput, setShowTrackingInput] = useState(false);
+   const [showTrackingModal, setShowTrackingModal] = useState(false);
 
-  // Checkout form state
-  const [checkoutData, setCheckoutData] = useState({
+   const [checkoutData, setCheckoutData] = useState({
     customerName: '',
     tableNumber: '',
     deliveryAddress: '',
@@ -52,8 +51,7 @@ const CartDrawer = ({
 
   const { addToast } = useToast();
 
-  // Update table and customer name dynamically
-  useEffect(() => {
+   useEffect(() => {
     if (checkoutData.tableNumber) setTableNo(`Table ${checkoutData.tableNumber}`);
     if (checkoutData.customerName) setCustomerName(checkoutData.customerName);
   }, [checkoutData.tableNumber, checkoutData.customerName]);
@@ -83,15 +81,13 @@ const CartDrawer = ({
       setShowTrackingModal(true);
       setShowTrackingInput(false);
       addToast({ type: 'success', title: 'Order Found', message: 'Tracking your order.' });
-    } catch (error) {
-      console.error('Error fetching order:', error);
+    } catch {
       addToast({ type: 'error', title: 'Error', message: 'Order not found. Please check your tracking code.' });
     }
   };
   
   const handlePlaceOrder = async () => {
-    // Validate required fields
-    if (orderType === 'Dine in' && !checkoutData.tableNumber) {
+     if (orderType === 'Dine in' && !checkoutData.tableNumber) {
       addToast({ type: 'error', title: 'Validation Error', message: 'Table number is required for dine-in orders.' });
       return;
     }
@@ -125,11 +121,8 @@ const CartDrawer = ({
         }
       };
 
-      console.log('Placing order with payload:', checkoutPayload);
       const response = await apiService.checkout(checkoutPayload);
-      console.log('Order placed successfully:', response);
 
-      // Fetch the created order for tracking
       const fetched = await apiService.getOrder(response.order.tracking_code);
       setFetchedOrder(fetched);
 
@@ -137,9 +130,8 @@ const CartDrawer = ({
       dispatch(clearCart());
       setOrderPlaced(true);
       setShowTrackingModal(true);
-      setSelectedPaymentMethod(null); // Reset payment selection
+      setSelectedPaymentMethod(null);
 
-      // Contextual success messages
       let successMessage = 'Order placed successfully!';
       if (orderType === 'Dine in') {
         successMessage = `Order for Table ${checkoutData.tableNumber} received!`;
@@ -154,8 +146,7 @@ const CartDrawer = ({
       if (typeof onCheckout === 'function') {
         onCheckout({ method: selectedPaymentMethod, orderId: response.order.id });
       }
-    } catch (error) {
-      console.error('Error placing order:', error);
+    } catch {
       addToast({ type: 'error', title: 'Order Failed', message: 'Failed to place order. Please try again.' });
     }
   };
