@@ -38,6 +38,7 @@ const mealsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchMeals.fulfilled, (state, action) => {
+        console.log('Fetched meals data:', action.payload);
         state.loading = false;
         state.meals = action.payload;
       })

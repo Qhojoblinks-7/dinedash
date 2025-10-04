@@ -243,6 +243,7 @@ class OrderStatusUpdateAPIView(APIView):
         return []
 
     def patch(self, request, id, *args, **kwargs):
+        logger.info(f"[orders:status_update] request data: {request.data}")
         new_status = request.data.get('status')
         if not new_status:
             return Response({"error": "Missing 'status' in request body."}, status=status.HTTP_400_BAD_REQUEST)
@@ -308,4 +309,109 @@ class OrderUpdateStatusAPIView(generics.UpdateAPIView):
                 {"error": "An error occurred while updating order status."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+# ----------------------------------------------------------------------
+# Analytics API
+# ----------------------------------------------------------------------
+class AnalyticsAPIView(APIView):
+    """ Analytics data for dashboard. """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        # Get all orders (for demo purposes, using all instead of completed)
+        orders = Order.objects.all()
+
+        # Filter by date range if provided
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        completed_orders = orders
+
+        # Total revenue
+        total_revenue = sum(float(order.total_amount) for order in completed_orders)
+
+        # Total orders
+        total_orders = completed_orders.count()
+
+        # Average order value
+        avg_order_value = total_revenue / total_orders if total_orders > 0 else 0
+
+        # Today's revenue
+        from django.utils import timezone
+        today = timezone.now().date()
+        today_orders = completed_orders.filter(created_at__date=today)
+        today_revenue = sum(float(order.total_amount) for order in today_orders)
+
+        # Daily revenue for the selected period
+        daily_revenue = []
+        if start_date and end_date:
+            start = timezone.datetime.fromisoformat(start_date).date()
+            end = timezone.datetime.fromisoformat(end_date).date()
+            current_date = start
+            while current_date <= end:
+                day_orders = completed_orders.filter(created_at__date=current_date)
+                revenue = sum(float(order.total_amount) for order in day_orders)
+                daily_revenue.append({
+                    'date': current_date.isoformat(),
+                    'revenue': revenue,
+                    'orders': day_orders.count()
+                })
+                current_date += timezone.timedelta(days=1)
+        else:
+            # Default to last 7 days if no date range specified
+            for i in range(6, -1, -1):
+                date = today - timezone.timedelta(days=i)
+                day_orders = completed_orders.filter(created_at__date=date)
+                revenue = sum(float(order.total_amount) for order in day_orders)
+                daily_revenue.append({
+                    'date': date.isoformat(),
+                    'revenue': revenue,
+                    'orders': day_orders.count()
+                })
+
+        # Payment method breakdown
+        payment_breakdown = {}
+        for order in completed_orders:
+            try:
+                payment = order.payments.first()  # Get the first payment
+                method = payment.method if payment else 'cash'
+            except:
+                method = 'cash'
+            payment_breakdown[method] = payment_breakdown.get(method, 0) + float(order.total_amount)
+
+        # Most profitable meals
+        from meals.models import Meal
+        meal_revenue = {}
+        for order in completed_orders:
+            for item in order.items.all():
+                meal_id = str(item.meal.id)
+                revenue = float(item.unit_price) * item.quantity
+                meal_revenue[meal_id] = meal_revenue.get(meal_id, 0) + revenue
+
+        most_profitable = []
+        for meal_id, revenue in sorted(meal_revenue.items(), key=lambda x: x[1], reverse=True)[:5]:
+            try:
+                meal = Meal.objects.get(id=meal_id)
+                most_profitable.append({
+                    'name': meal.name,
+                    'revenue': revenue
+                })
+            except Meal.DoesNotExist:
+                continue
+
+        return Response({
+            'total_revenue': total_revenue,
+            'total_orders': total_orders,
+            'avg_order_value': avg_order_value,
+            'today_revenue': today_revenue,
+            'daily_revenue': daily_revenue,
+            'payment_breakdown': payment_breakdown,
+            'most_profitable': most_profitable
+        })
     

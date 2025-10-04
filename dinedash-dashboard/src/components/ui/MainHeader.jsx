@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   MagnifyingGlassIcon as SearchIcon,
   BellIcon,
@@ -24,9 +24,7 @@ const DUMMY_CATEGORIES = [
   { id: 'cat_4', name: 'Drinks', count: 57 },
 ];
 
-const MainHeader = () => {
-  const [activeCategory, setActiveCategory] = useState('cat_1');
-
+const MainHeader = ({ searchQuery, onSearchChange, categories, selectedCategory, onCategoryChange, onAddMeal }) => {
   const currentDate = new Date().toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'long',
@@ -42,9 +40,21 @@ const MainHeader = () => {
           <SearchIcon className="h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search items..."
+            placeholder="Search meals or orders..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none w-full"
           />
+        </div>
+
+        {/* Center Section: Add Meal Button */}
+        <div className="flex-1 flex justify-center">
+          <button
+            onClick={onAddMeal}
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+          >
+            Add New Meal
+          </button>
         </div>
 
         {/* Right Section: Date & Notification Icon */}
@@ -58,14 +68,14 @@ const MainHeader = () => {
 
       {/* Bottom Row: Category Filter */}
       <div className="flex items-center gap-4 overflow-x-auto">
-        {DUMMY_CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <CategoryPill
             key={category.id}
             icon={categoryIcons[category.name.toLowerCase()]}
             name={category.name}
             count={category.count}
-            isActive={activeCategory === category.id}
-            onClick={() => setActiveCategory(category.id)}
+            isActive={selectedCategory === category.id}
+            onClick={() => onCategoryChange(category.id)}
           />
         ))}
       </div>

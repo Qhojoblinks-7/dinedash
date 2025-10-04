@@ -15,6 +15,21 @@ export const fetchMeals = createAsyncThunk('meals/fetchMeals', async (_, thunkAP
   }
 });
 
+// Thunk: create a new meal
+export const createMeal = createAsyncThunk('meals/createMeal', async (mealData, thunkAPI) => {
+  try {
+    const response = await axios.post(API_URL, mealData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data; // the created meal
+  } catch (error) {
+    console.error('Create meal error:', error.response?.data);
+    return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+  }
+});
+
 const mealsSlice = createSlice({
   name: 'meals',
   initialState: {
@@ -42,6 +57,18 @@ const mealsSlice = createSlice({
         state.meals = action.payload;
       })
       .addCase(fetchMeals.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createMeal.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createMeal.fulfilled, (state, action) => {
+        state.loading = false;
+        state.meals.push(action.payload);
+      })
+      .addCase(createMeal.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

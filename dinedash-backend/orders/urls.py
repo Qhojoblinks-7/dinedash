@@ -7,6 +7,7 @@ from .views import (
     StaffOrderRetrieveAPIView,
     OrderStatusUpdateAPIView,
     OrderUpdateStatusAPIView,
+    AnalyticsAPIView,
 )
 
 app_name = "orders"  # Optional: allows namespacing URLs for reverse lookups
@@ -17,6 +18,9 @@ urlpatterns = [
 
     # Create a new order
     path('create/', OrderCreateAPIView.as_view(), name='order-create'),
+
+    # Analytics endpoint (must be before tracking_code to avoid conflict)
+    path('analytics/', AnalyticsAPIView.as_view(), name='analytics'),
 
     # Retrieve a single order by tracking code (customers/guests)
     path('<str:tracking_code>/', OrderRetrieveAPIView.as_view(), name='order-detail'),

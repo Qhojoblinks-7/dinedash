@@ -9,12 +9,12 @@ class Order(models.Model):
     Represents a customer order in the system.
     """
     
-    # --- Status Choices (Ensuring Fulfillment Clarity) ---
+    # Status Choices (Ensuring Fulfillment Clarity)
     STATUS_PENDING = 'pending'
-    STATUS_IN_PROGRESS = 'in_progress'
-    STATUS_READY = 'ready'            # Ready for handover/pickup
-    STATUS_DELIVERED = 'delivered'    # Delivery complete
-    STATUS_COMPLETED = 'completed'    # Final status (Dine-in/Pickup completion)
+    STATUS_IN_PROGRESS = 'in progress'
+    STATUS_READY = 'ready'
+    STATUS_DELIVERED = 'delivered'
+    STATUS_COMPLETED = 'completed'
     STATUS_CANCELLED = 'cancelled'
 
     STATUS_CHOICES = [
@@ -26,7 +26,7 @@ class Order(models.Model):
         (STATUS_CANCELLED, 'Cancelled'),
     ]
 
-    TYPE_DINE_IN = 'dine_in'
+    TYPE_DINE_IN = 'dine in'
     TYPE_TAKE_OUT = 'takeaway'
     TYPE_DELIVERY = 'delivery'
     TYPE_PICKUP = 'pickup'
@@ -38,7 +38,7 @@ class Order(models.Model):
         (TYPE_PICKUP, 'Pickup'),
     ]
     
-    # --- Relationships ---
+    # Relationships
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -48,7 +48,7 @@ class Order(models.Model):
         help_text="The registered user who placed the order."
     )
 
-    # --- Customer and Logistics ---
+    # Customer and Logistics
     customer_identifier = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
@@ -59,7 +59,6 @@ class Order(models.Model):
     tracking_code = models.CharField(
         max_length=12,
         editable=False,
-        # default=lambda: uuid.uuid4().hex[:8].upper(),  
         help_text="Short code for customers to track their order."
     )
 
@@ -77,12 +76,12 @@ class Order(models.Model):
     pickup_time = models.DateTimeField(null=True, blank=True)
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-    # --- Core Status and Pricing ---
+    # Core Status and Pricing
     order_type = models.CharField(max_length=10, choices=ORDER_TYPE_CHOICES, default=TYPE_DINE_IN)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-    # --- Timestamps ---
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

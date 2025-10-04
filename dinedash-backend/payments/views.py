@@ -19,7 +19,6 @@ class PaymentListAPIView(generics.ListAPIView):
     serializer_class = PaymentSerializer 
     permission_classes = [IsAdminUser] 
 
-# ----------------------------------------------------------------------
 
 # --- MOCK PAYMENT GATEWAY (Capstone Simulation) ---
 

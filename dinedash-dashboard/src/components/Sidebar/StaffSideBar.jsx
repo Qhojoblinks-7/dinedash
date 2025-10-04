@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import SidebarItem from './SidebarItem';
 import {
   Bars3Icon,
@@ -10,11 +10,9 @@ import {
   ArrowLeftOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 
-const StaffSidebar = () => {
-  const [activeLink, setActiveLink] = useState('Menu');
-
+const StaffSidebar = ({ activeTab, onTabChange }) => {
   const handleLinkClick = (label) => {
-    setActiveLink(label);
+    onTabChange(label);
   };
 
   return (
@@ -31,37 +29,37 @@ const StaffSidebar = () => {
           <SidebarItem
             icon={<Bars3Icon className="w-5 h-5" />}
             label="Menu"
-            isActive={activeLink === 'Menu'}
+            isActive={activeTab === 'Menu'}
             onClick={() => handleLinkClick('Menu')}
           />
           <SidebarItem
             icon={<TableCellsIcon className="w-5 h-5" />}
             label="Table Services"
-            isActive={activeLink === 'Table Services'}
+            isActive={activeTab === 'Table Services'}
             onClick={() => handleLinkClick('Table Services')}
           />
           <SidebarItem
             icon={<CalendarDaysIcon className="w-5 h-5" />}
             label="Reservation"
-            isActive={activeLink === 'Reservation'}
+            isActive={activeTab === 'Reservation'}
             onClick={() => handleLinkClick('Reservation')}
           />
           <SidebarItem
             icon={<TruckIcon className="w-5 h-5" />}
             label="Delivery"
-            isActive={activeLink === 'Delivery'}
+            isActive={activeTab === 'Delivery'}
             onClick={() => handleLinkClick('Delivery')}
           />
           <SidebarItem
             icon={<CalculatorIcon className="w-5 h-5" />}
             label="Accounting"
-            isActive={activeLink === 'Accounting'}
+            isActive={activeTab === 'Accounting'}
             onClick={() => handleLinkClick('Accounting')}
           />
           <SidebarItem
             icon={<Cog6ToothIcon className="w-5 h-5" />}
             label="Settings"
-            isActive={activeLink === 'Settings'}
+            isActive={activeTab === 'Settings'}
             onClick={() => handleLinkClick('Settings')}
           />
         </nav>

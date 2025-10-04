@@ -1,12 +1,12 @@
 // src/components/cart/CartDrawerBackend.jsx
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUtensils, faTimes, faClock, faCreditCard, faTrashAlt, faCheckCircle, faPencilAlt, faMoneyBillAlt, faQrcode } from '@fortawesome/free-solid-svg-icons';
+import { faUtensils, faTimes, faCreditCard, faCheckCircle, faPencilAlt, faMoneyBillAlt, faQrcode } from '@fortawesome/free-solid-svg-icons';
 import OrderTracking from './OrderTracking';
 import Button from '../ui/Button';
 import { useToast } from '../ui/toastContext';
 import { useSelector, useDispatch } from 'react-redux';
-import { changeQty, removeItem, toggleDrawer, setNotes, setLastOrderId, clearCart } from '../../store/cartSlice';
+import { toggleDrawer, setLastOrderId, clearCart } from '../../store/cartSlice';
 
 const CartDrawerBackend = ({
   open,
@@ -32,8 +32,8 @@ const CartDrawerBackend = ({
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
   const [orderType, setOrderType] = useState('Dine in');
-  const [tableNo, setTableNo] = useState('Table 4');
-  const [customerName, setCustomerName] = useState('Floyd Miles');
+  const tableNo = '';
+  const customerName = '';
 
   const { addToast } = useToast();
 

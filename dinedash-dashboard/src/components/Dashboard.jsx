@@ -1,25 +1,61 @@
 import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { StaffSideBar } from './Sidebar';
 import { TableStatus } from './Footer';
 import { OrderDetailsPanel } from './OrderDetails';
 import MainHeader from './ui/MainHeader';
 import MenuItemCard from './ui/MenuItemCard';
+import Accounting from './Accounting';
 import { useToast } from './ui/toastContext';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchMeals } from '../store/mealsSlice';
-import { fetchOrders, updateOrderStatus, finalizePayment } from '../store/ordersSlice';
+import { fetchMeals, createMeal } from '../store/mealsSlice';
+import { fetchOrders, updateOrderStatus, finalizePayment, verifyPayment } from '../store/ordersSlice';
 
 // --- Dashboard Component ---
 const Dashboard = () => {
   const { addToast } = useToast();
   const dispatch = useDispatch();
+  const [activeTab, setActiveTab] = useState('Menu');
 
   // Use Redux state for meals and orders
-  const { meals: menuItems, loading: mealsLoading, error: mealsError } = useSelector(state => state.meals);
+  const mealsState = useSelector(state => state.meals);
+  const { meals: menuItems, loading: mealsLoading, error: mealsError } = mealsState;
+  const { meals } = mealsState;
   const { orders, loading: ordersLoading, error: ordersError } = useSelector(state => state.orders);
 
   // Local state for orders
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [showAddMeal, setShowAddMeal] = useState(false);
+  const [newMeal, setNewMeal] = useState({
+    name: '',
+    description: '',
+    price: '',
+    prep_time: '',
+    category: 'main_course',
+    image: null,
+    is_veg: false,
+    is_available: true,
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    // Check if query matches an order tracking code
+    const matchingOrder = orders.find(order => order.tracking_code.toLowerCase().includes(query.toLowerCase()));
+    if (matchingOrder) {
+      setSelectedOrder(matchingOrder);
+    }
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+  };
+
+  const handleAddMealClick = () => {
+    setShowAddMeal(true);
+  };
 
   // Fetch data on component mount
   useEffect(() => {
@@ -38,11 +74,11 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [dispatch]);
 
-  // Calculate ordered quantities from all orders
+  // Calculate ordered quantities from pending orders
   const calculateOrderedQuantities = () => {
     const quantities = {};
     orders.forEach(order => {
-      if (order.items && Array.isArray(order.items)) {
+      if (order.status === 'pending' && order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
           const mealId = item.meal?.toString() || item.meal_id?.toString();
           if (mealId) {
@@ -56,8 +92,30 @@ const Dashboard = () => {
 
   const orderedQuantities = calculateOrderedQuantities();
 
+  const categoryCounts = menuItems.reduce((acc, meal) => {
+    acc[meal.category] = (acc[meal.category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const categories = [
+    { id: 'all', name: 'All', count: menuItems.length },
+    { id: 'main_course', name: 'Main Course', count: categoryCounts.main_course || 0 },
+    { id: 'desserts', name: 'Desserts', count: categoryCounts.desserts || 0 },
+    { id: 'drinks', name: 'Drinks', count: categoryCounts.drinks || 0 },
+    { id: 'appetizers', name: 'Appetizers', count: categoryCounts.appetizers || 0 },
+    { id: 'sides', name: 'Sides', count: categoryCounts.sides || 0 },
+  ];
+
+  const filteredMeals = menuItems.filter(meal => {
+    const matchesCategory = selectedCategory === 'all' || meal.category === selectedCategory;
+    const matchesSearch = meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          meal.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+
   // Transform meals data to match component expectations
-  const transformedMenuItems = menuItems.map(meal => ({
+  const transformedMenuItems = filteredMeals.map(meal => ({
     id: meal.id.toString(),
     name: meal.name,
     description: meal.description || 'No description available',
@@ -81,16 +139,6 @@ const Dashboard = () => {
     setSelectedOrder(order);
   };
 
-  const handleSendToKitchen = async () => {
-    if (selectedOrder) {
-      try {
-        await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'sentToKitchen' })).unwrap();
-        addToast('Order sent to kitchen successfully!', 'success');
-      } catch (error) {
-        addToast('Failed to send order to kitchen.', 'error');
-      }
-    }
-  };
 
   const handleFinalizePayment = async (paymentMethod) => {
     if (selectedOrder) {
@@ -104,14 +152,72 @@ const Dashboard = () => {
     }
   };
 
-  const handleSendToKitchen = async (orderId) => {
+  const handleSendToKitchen = async () => {
+    if (selectedOrder) {
+      // Check if payment is confirmed for pending orders
+      if (selectedOrder.status === 'pending') {
+        addToast('Please verify payment before sending to kitchen.', 'error');
+        return;
+      }
+      console.log('Sending order to kitchen:', selectedOrder.id, selectedOrder.status, 'items:', selectedOrder.items);
+      try {
+        await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'in progress' })).unwrap();
+        console.log('Order status updated');
+        dispatch(fetchOrders()); // Refresh orders to update quantities
+        console.log('Orders fetched');
+        addToast('Order sent to kitchen successfully!', 'success');
+      } catch (error) {
+        console.error('Failed to send order to kitchen', error);
+        addToast('Failed to send order to kitchen.', 'error');
+      }
+    }
+  };
+
+  const handleVerifyPayment = async () => {
+    if (selectedOrder && selectedOrder.payment_tx_ref) {
+      setVerifyingPayment(true);
+      try {
+        await dispatch(verifyPayment({ orderId: selectedOrder.id, txRef: selectedOrder.payment_tx_ref })).unwrap();
+        dispatch(fetchOrders());
+        addToast('Payment verified successfully!', 'success');
+      } catch {
+        addToast('Failed to verify payment.', 'error');
+      } finally {
+        setVerifyingPayment(false);
+      }
+    } else {
+      addToast('No payment reference found.', 'error');
+    }
+  };
+
+  const handleAddMeal = async () => {
+    const formData = new FormData();
+    formData.append('name', newMeal.name);
+    formData.append('description', newMeal.description);
+    formData.append('price', newMeal.price);
+    formData.append('prep_time', newMeal.prep_time);
+    formData.append('category', newMeal.category);
+    formData.append('is_veg', newMeal.is_veg);
+    formData.append('is_available', newMeal.is_available);
+    if (newMeal.image) {
+      formData.append('image', newMeal.image);
+    }
     try {
-      await apiService.updateOrderStatus(orderId, 'in_progress');
-      dispatch(fetchOrders());
-      addToast({ type: 'success', title: 'Order sent', message: 'Order sent to kitchen.' });
-    } catch (err) {
-      console.error('Failed to update order status', err);
-      addToast({ type: 'error', title: 'Update failed', message: 'Could not send order to kitchen.' });
+      await dispatch(createMeal(formData)).unwrap();
+      setShowAddMeal(false);
+      setNewMeal({
+        name: '',
+        description: '',
+        price: '',
+        prep_time: '',
+        category: 'main_course',
+        image: null,
+        is_veg: false,
+        is_available: true,
+      });
+      addToast('Meal added successfully!', 'success');
+    } catch {
+      addToast('Failed to add meal.', 'error');
     }
   };
 
@@ -134,35 +240,47 @@ const Dashboard = () => {
   return (
     <div className="flex bg-gray-50 min-h-screen relative">
       {/* Left Sidebar */}
-      <StaffSideBar />
+      <StaffSideBar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content */}
-      <div className="flex-1 ml-64 p-6">
-        <MainHeader />
-        <div className="mt-40 grid grid-cols-2 md:grid-cols-3 gap-6">
-          {loading ? (
-            <div className="col-span-full text-center py-8">
-              <div className="text-lg">Loading menu items...</div>
+      <div className="flex-1 ml-64">
+        {activeTab === 'Menu' && (
+          <div className="p-6 pb-32">
+            <MainHeader
+              searchQuery={searchQuery}
+              onSearchChange={handleSearchChange}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+              onAddMeal={handleAddMealClick}
+            />
+            <div className="mt-40 grid grid-cols-2 md:grid-cols-3 gap-6">
+              {loading ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="text-lg">Loading menu items...</div>
+                </div>
+              ) : error ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="text-red-600 text-lg">Error loading menu: {error}</div>
+                </div>
+              ) : (
+                transformedMenuItems.map((item) => (
+                  <MenuItemCard
+                    key={item.id}
+                    name={item.name}
+                    description={item.description}
+                    image={item.image}
+                    price={item.price}
+                    isVeg={item.isVeg}
+                    isAvailable={item.isAvailable}
+                    quantity={item.orderedQuantity}
+                  />
+                ))
+              )}
             </div>
-          ) : error ? (
-            <div className="col-span-full text-center py-8">
-              <div className="text-red-600 text-lg">Error loading menu: {error}</div>
-            </div>
-          ) : (
-            transformedMenuItems.map((item) => (
-              <MenuItemCard
-                key={item.id}
-                name={item.name}
-                description={item.description}
-                image={item.image}
-                price={item.price}
-                isVeg={item.isVeg}
-                isAvailable={item.isAvailable}
-                quantity={item.orderedQuantity}
-              />
-            ))
-          )}
-        </div>
+          </div>
+        )}
+        {activeTab === 'Accounting' && <Accounting />}
       </div>
 
       {/* Footer */}
@@ -174,22 +292,97 @@ const Dashboard = () => {
           isOpen={true}
           tableDetails={tableDetails}
           orderDetails={orderDetails}
+          order={selectedOrder}
+          meals={meals}
+          verifyingPayment={verifyingPayment}
           onRemoveItem={() => {}}
-          onSendToKitchen={() => {
-            // TODO: wire selected order id; using first order as placeholder
-            const firstOrderId = orders?.[0]?.id;
-            if (firstOrderId) {
-              handleSendToKitchen(firstOrderId);
-            } else {
-              addToast({ type: 'error', title: 'No order', message: 'No order to send.' });
-            }
-          }}
-          onFinalizePayment={() => {}}
-          onClose={() => setSelectedTable(null)}
           onSendToKitchen={handleSendToKitchen}
           onFinalizePayment={handleFinalizePayment}
+          onVerifyPayment={handleVerifyPayment}
           onClose={() => setSelectedOrder(null)}
         />
+      )}
+
+      {/* Add Meal Modal */}
+      {showAddMeal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Add New Meal</h2>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Name"
+                value={newMeal.name}
+                onChange={(e) => setNewMeal({ ...newMeal, name: e.target.value })}
+                className="w-full p-2 border rounded"
+              />
+              <textarea
+                placeholder="Description"
+                value={newMeal.description}
+                onChange={(e) => setNewMeal({ ...newMeal, description: e.target.value })}
+                className="w-full p-2 border rounded"
+              />
+              <input
+                type="number"
+                placeholder="Price"
+                value={newMeal.price}
+                onChange={(e) => setNewMeal({ ...newMeal, price: e.target.value })}
+                className="w-full p-2 border rounded"
+              />
+              <input
+                type="number"
+                placeholder="Preparation Time (minutes)"
+                value={newMeal.prep_time}
+                onChange={(e) => setNewMeal({ ...newMeal, prep_time: e.target.value })}
+                required
+                className="w-full p-2 border rounded"
+              />
+              <select
+                value={newMeal.category}
+                onChange={(e) => setNewMeal({ ...newMeal, category: e.target.value })}
+                className="w-full p-2 border rounded"
+              >
+                <option value="main_course">Main Course</option>
+                <option value="desserts">Desserts</option>
+                <option value="drinks">Drinks</option>
+                <option value="appetizers">Appetizers</option>
+                <option value="sides">Sides</option>
+              </select>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNewMeal({ ...newMeal, image: e.target.files[0] })}
+                className="w-full p-2 border rounded"
+              />
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newMeal.is_veg}
+                  onChange={(e) => setNewMeal({ ...newMeal, is_veg: e.target.checked })}
+                  className="mr-2"
+                />
+                Vegetarian
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newMeal.is_available}
+                  onChange={(e) => setNewMeal({ ...newMeal, is_available: e.target.checked })}
+                  className="mr-2"
+                />
+                Available
+              </label>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={handleAddMeal} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Add Meal
+              </button>
+              <button onClick={() => setShowAddMeal(false)} className="border px-4 py-2 rounded">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

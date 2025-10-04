@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 
 const AddToCartAnimation = ({ meal, onComplete }) => {
-  const [stage, setStage] = useState('fold'); // fold, fly, unfold
+  const [stage, setStage] = useState('fold'); 
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [cartPosition, setCartPosition] = useState({ x: 0, y: 0 });
 

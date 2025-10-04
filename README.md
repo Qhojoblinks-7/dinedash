@@ -1,13 +1,115 @@
 # 🍽️ DineDash - Complete Restaurant Management System
 
-## 🎯 **Overview**
-DineDash is a comprehensive restaurant management system featuring a **customer-facing digital menu**, **staff dashboard**, and **complete backend API**. Built with modern technologies for seamless restaurant operations.
+## Capstone Project - ALX B.E
 
-### **🏗️ Architecture**
-- **Backend**: Django REST Framework with SQLite database
-- **Customer App**: React + Vite with Tailwind CSS
-- **Staff Dashboard**: React + Vite with Tailwind CSS
-- **Real-time Updates**: Polling-based order synchronization
+### Project Idea
+This project is a Restaurant Virtual Menu System that will be designed to solve common issues in restaurants, such as long wait time and ordering unavailable meals. This system will feature a customer-facing digital menu with real-time updates on meal availability and preparation times, as well as an integrated payment system. A separated dashboard will allow restaurant staff to manage menu items and track orders.
+
+### Problem Statement
+In restaurants across Ghana and beyond, customers often face long wait times, uncertainty about mail availability, and limited transparency in ordering process. Traditional menus are static and do not reflect real time updates, customers may order meals that are unavailable or face unexpected delays in preparation.
+
+Additionally, restaurants lack digital payment integration that simplifies transactions, leading to inefficiencies for both customers and staff. Existing digital menu systems are either too expensive, not tailored to local restaurant needs, or lack features like real-time availability tracking and estimated wait times.
+
+This creates frustrations for customers and operational challenges for restaurants, ultimately reducing customer satisfaction and business efficiency.
+
+### Solution Statement
+To address these challenges, we propose building a restaurant Virtual Menu System that integrates:
+
+Digital menu with Real-Time Updates
+Customers can view available meals from any device(mobile, tablets, etc.). Meals marked as out of stock or not available or not ready are automatically updated, preventing wasted time and orders.
+
+Preparation Time Tracking
+Each dish will include an estimated preparation time(e.g. 15 minutes), giving customers realistic expectations and reducing frustration.
+
+Integrated Payment System
+Customers can securely pay through mobile money, credits cards, or POS (Point of Sale) integration. This reduces cash handling limits and streamlines the payment process.
+
+Restaurant Dashboard A backend interface for staff to update menu items, mark meals as available/unavailable, and adjust preparation times. Includes basic analytics such as most ordered meals and peak times.
+
+Customer-Centered Design A clean, intuitive interface for customers to browse meals, place orders, and pay without needing external assistance.
+
+This solution ensures that restaurants can increase efficiency, reduce wait-time complaints, and improve customer satisfaction, while also providing a scalable system that can be extended to multiple restaurant chains in the future.
+
+### Main Features
+The project will focus on the following core functionalities to ensure a functional and complete application:
+
+Customer Digital Menu: A responsive menu accessible from any device that shows all meals, with out-or-stock items clearly marked.
+
+Preparation Time Display: each menu item will show an estimated preparation time.
+
+Order Placement: Customers can add items to an order, review a summary, and place the orders.
+
+Staff Dashboard: A simple, secure interface for staff to toggle meal availability and view incoming orders.
+
+API for Real-Time Data: The front-end will connect to a backend API to fetch and update menu and order information in real-time.
+
+### API Usage
+This project will not require an external third-party API. Instead, we will build our own RESTful API using Django and the Django REST Framework (DRF). This is a crucial part of the project that will allow the front-end to communicate with the database and manage all the data.
+
+### Project Structure and Database Schema
+The project will be structured into three main Django apps for clear separation of concerns:
+users App: Handles staff authentication and roles. Customers will not need to create an account or log in to use the menu.
+meals App: Manages all menu items, including their availability and preparation times.
+orders App: Handles the entire customer ordering process, from creation to status tracking.
+
+Database Schema (Django Models)
+The database will consist of the following models, with a clear outline of their fields and relationships:
+User Model (in users app):
+username: CharField (unique identifier for staff login)
+password: CharField (hashed password)
+role: CharField (e.g., 'staff')
+
+Meal Model (in meals app):
+name: CharField
+description: TextField
+price: DecimalField
+prep_time: IntegerField (in minutes)
+is_available: BooleanField (default=True)
+image: ImageField (optional)
+
+Order Model (in orders app):
+customer_identifier: CharField (e.g., table number)
+status: CharField (e.g., 'pending', 'in-progress', 'ready', 'completed')
+total_amount: DecimalField
+created_at: DateTimeField
+
+OrderItem Model (in orders app):
+order: ForeignKey to Order (one order can have many items)
+meal: ForeignKey to Meal (references the item being ordered)
+quantity: IntegerField
+
+### Basic Timeline
+This is a simple plan to help break down the work into manageable weekly goals:
+Week 1: Backend Foundations
+Set up the Django project and the three apps (users, meals, orders).
+Define the Django models (User, Meal, Order, OrderItem).
+Set up Django Admin to easily add and manage menu items.
+
+Week 2: Building the API
+Set up the Django REST Framework.
+Create API serializers and views for the Meal and Order models.
+Implement API endpoints for viewing and creating meals and orders.
+
+Week 3: Front-End UI
+Set up the React project with Vite and Tailwind CSS.
+Build the main UI components for the customer menu (MenuItemCard, OrderSummary).
+Create the basic page layouts and routing.
+
+Week 4: Integration and Polish
+Connect the React front-end to the Django API to fetch and display data.
+Implement the ordering and status-tracking logic.
+Work on final styling and responsiveness.
+ 
+## Implementation Extensions
+The current DineDash implementation has been expanded beyond the basic capstone requirements to include:
+
+- **Payment Processing**: Full payment integration with multiple methods (Cash, Momo, Card)
+- **Order Types**: Support for Dine-in, Takeaway, and Delivery orders
+- **Advanced Staff Dashboard**: Real-time order monitoring, table status tracking, and analytics
+- **Additional Database Models**: Payment model for transaction tracking
+- **Enhanced API**: Comprehensive endpoints for all operations
+
+This provides a production-ready restaurant management system.
 
 ## 📁 **Project Structure**
 ```
@@ -29,6 +131,96 @@ dinedash/
     │   └── ui/               # Reusable UI components
     └── store/                # Redux state management
 ```
+
+## 🔄 **User Flows**
+
+### **Customer Journey**
+1. **Browse Menu** → Select category or search meals
+2. **Add to Cart** → Adjust quantities, view cart summary
+3. **Checkout** → Select order type (Dine-in/Takeaway/Delivery)
+4. **Payment** → Choose method (Cash/Momo/Card), enter details
+5. **Order Confirmation** → Receive tracking code, monitor status
+6. **Order Completion** → Real-time updates until delivery/pickup
+
+### **Staff Workflow**
+1. **Login** → Access dashboard with role-based permissions
+2. **Monitor Orders** → View live order feed (auto-updates every 30s)
+3. **Process Payments** → Verify payments for pending orders
+4. **Send to Kitchen** → Update order status to 'in_progress'
+5. **Manage Menu** → Add/edit meals, update availability
+6. **Track Analytics** → Monitor peak hours, most ordered items
+
+### **Admin Operations**
+1. **User Management** → Create staff accounts with roles
+2. **Menu CRUD** → Full meal management with images
+3. **Order Oversight** → View all orders, intervene if needed
+4. **Payment Monitoring** → Track payment statuses and issues
+
+## 🗂️ **Entity Relationship Diagram (ERD)**
+
+```
+┌─────────────────┐       ┌─────────────────┐
+│     User        │       │      Order      │
+│─────────────────│       │─────────────────│
+│ id (PK)         │       │ id (PK)         │
+│ username        │       │ customer_name   │
+│ email           │       │ order_type      │
+│ role            │       │ status          │
+│ created_at      │       │ total_amount    │
+│                 │       │ delivery_fee    │
+│                 │       │ table_number    │
+│                 │       │ tracking_code   │
+│                 │       │ created_at      │
+│                 │       │ user_id (FK)    │
+└─────────────────┘       └─────────────────┘
+         │                           │
+         │                           │
+         ▼                           ▼
+┌─────────────────┐       ┌─────────────────┐
+│   Payment       │       │   OrderItem     │
+│─────────────────│       │─────────────────│
+│ id (PK)         │       │ id (PK)         │
+│ amount          │       │ quantity        │
+│ method          │       │ unit_price      │
+│ status          │       │ item_name       │
+│ transaction_ref │       │ order_id (FK)   │
+│ bank_details    │       │ meal_id (FK)    │
+│ order_id (FK)   │       └─────────────────┘
+└─────────────────┘               │
+         ▲                       │
+         │                       │
+         │                       ▼
+         │               ┌─────────────────┐
+         │               │      Meal       │
+         │               │─────────────────│
+         │               │ id (PK)         │
+         │               │ name            │
+         │               │ description     │
+         │               │ price           │
+         │               │ image           │
+         │               │ is_available    │
+         │               │ is_veg          │
+         │               │ prep_time       │
+         │               └─────────────────┘
+         │
+         │
+         ▼
+┌─────────────────┐
+│ Payment Methods │
+│─────────────────│
+│ Cash            │
+│ Momo (MTN/Voda) │
+│ Flutterwave     │
+│ Bank Transfer   │
+└─────────────────┘
+```
+
+### **Key Relationships**
+- **User ↔ Order**: One-to-many (staff can manage multiple orders)
+- **Order ↔ OrderItem**: One-to-many (orders contain multiple items)
+- **Order ↔ Payment**: One-to-one (each order has one payment)
+- **OrderItem ↔ Meal**: Many-to-one (items reference menu meals)
+- **Payment ↔ Payment Methods**: Many-to-one (payments use specific methods)
 
 ## ✨ **Features**
 
@@ -292,6 +484,20 @@ python test_payment_scenarios.py
 4. **Push** to branch: `git push origin feature/new-feature`
 5. **Create** Pull Request
 
+## 🧹 **Code Quality**
+
+### **Linting & Code Standards**
+- **Backend**: Django system checks pass with no issues
+- **Frontend**: ESLint configured for React best practices
+- **Code Cleanup**: Removed duplicate serializer classes and unused variables
+- **Dependencies**: No duplicate packages across client and dashboard apps
+
+### **Development Standards**
+- Consistent code formatting across all components
+- Proper error handling and logging
+- Clean separation of concerns between apps
+- Responsive design patterns implemented
+
 ## 📄 **License**
 
 This project is licensed under the MIT License - see the LICENSE file for details.
@@ -301,3 +507,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **🎉 DineDash is now a complete, production-ready restaurant management system!**
 
 **Ready to serve customers and streamline restaurant operations! 🍽️✨**
+

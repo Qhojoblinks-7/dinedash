@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from decimal import Decimal
 
 
 
@@ -8,8 +9,29 @@ class Meal(models.Model):
     """
     A model representing a meal in the restaurant or to store menu items
     """
-    
-    name = models.CharField(max_length = 200, unique = True, db_index = True) 
+
+    CATEGORY_MAIN_COURSE = 'main_course'
+    CATEGORY_DESSERTS = 'desserts'
+    CATEGORY_DRINKS = 'drinks'
+    CATEGORY_APPETIZERS = 'appetizers'
+    CATEGORY_SIDES = 'sides'
+
+    CATEGORY_CHOICES = [
+        (CATEGORY_MAIN_COURSE, 'Main Course'),
+        (CATEGORY_DESSERTS, 'Desserts'),
+        (CATEGORY_DRINKS, 'Drinks'),
+        (CATEGORY_APPETIZERS, 'Appetizers'),
+        (CATEGORY_SIDES, 'Sides'),
+    ]
+
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default=CATEGORY_MAIN_COURSE,
+        db_index=True
+    )
+
+    name = models.CharField(max_length = 200, unique = True, db_index = True)
     
     
     
@@ -18,9 +40,9 @@ class Meal(models.Model):
     
     
     price = models.DecimalField(
-        max_digits = 8, 
+        max_digits = 8,
         decimal_places = 2,
-        validators = [MinValueValidator(0.0)]
+        validators = [MinValueValidator(Decimal('0.00'))]
     ) # max_digits is the total number of digits, decimal_places is the number of digits after the decimal point
     
     

@@ -30,6 +30,16 @@ export const finalizePayment = createAsyncThunk('orders/finalizePayment', async 
   }
 });
 
+// Thunk: verify payment for an order
+export const verifyPayment = createAsyncThunk('orders/verifyPayment', async ({ orderId, txRef }, thunkAPI) => {
+  try {
+    const response = await axios.get(`${PAYMENT_API_URL}mock-verify/?tx_ref=${txRef}&order_id=${orderId}&status=successful`);
+    return response.data; // updated payment
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+  }
+});
+
 // Thunk: update order status
 export const updateOrderStatus = createAsyncThunk('orders/updateOrderStatus', async ({ orderId, status }, thunkAPI) => {
   try {
@@ -83,7 +93,8 @@ const ordersSlice = createSlice({
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         state.loading = false;
         const updatedOrder = action.payload;
-        const index = state.orders.findIndex(order => order.id === updatedOrder.id);
+        const index = state.orders.findIndex(order => String(order.id) === String(updatedOrder.id));
+        console.log('Updating order', updatedOrder.id, 'status', updatedOrder.status, 'index', index);
         if (index !== -1) {
           state.orders[index] = updatedOrder;
         }

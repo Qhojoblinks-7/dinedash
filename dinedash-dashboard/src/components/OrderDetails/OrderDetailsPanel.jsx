@@ -5,8 +5,8 @@ import OrderedItem from './OrderedItem';
 import PriceSummary from './PriceSummary';
 import PaymentActions from './PaymentActions';
 
-const OrderDetailsPanel = ({ isOpen, tableDetails, orderDetails, onRemoveItem, onSendToKitchen, onFinalizePayment, onClose }) => {
-  const { tableNumber, orderType, items, subtotal, tax, totalAmount, paymentMethod } = orderDetails;
+const OrderDetailsPanel = ({ isOpen, tableDetails, orderDetails, order, meals, verifyingPayment, onRemoveItem, onSendToKitchen, onFinalizePayment, onVerifyPayment, onClose }) => {
+  const { items, subtotal, tax, totalAmount, paymentMethod } = orderDetails;
 
   return (
     <div className={`fixed top-0 right-0 h-screen w-96 bg-gray-50 p-6 flex flex-col justify-between shadow-lg transition-transform duration-300 ease-in-out z-20 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
@@ -22,17 +22,20 @@ const OrderDetailsPanel = ({ isOpen, tableDetails, orderDetails, onRemoveItem, o
       <div className="flex-1 overflow-y-auto space-y-4">
         <OrderHeader tableNumber={tableDetails.tableNumber} orderType={tableDetails.orderType} paymentMethod={paymentMethod} />
         {items.map((item) => (
-          <OrderedItem key={item.meal} item={item} onRemove={onRemoveItem} />
+          <OrderedItem key={item.meal} item={item} meals={meals} onRemove={onRemoveItem} />
         ))}
       </div>
 
       {/* Footer Section */}
       <div className="flex-shrink-0 mt-4 space-y-4">
         <PriceSummary subTotal={subtotal} tax={tax} totalAmount={totalAmount} />
-        <PaymentActions 
-          onSendToKitchen={onSendToKitchen} 
-          onFinalizePayment={onFinalizePayment} 
-          orderIsSent={tableDetails.status === 'sentToKitchen'} 
+        <PaymentActions
+          order={order}
+          verifyingPayment={verifyingPayment}
+          onSendToKitchen={onSendToKitchen}
+          onFinalizePayment={onFinalizePayment}
+          onVerifyPayment={onVerifyPayment}
+          orderIsSent={tableDetails.status === 'sentToKitchen'}
         />
       </div>
     </div>

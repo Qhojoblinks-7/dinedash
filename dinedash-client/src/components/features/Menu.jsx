@@ -20,6 +20,8 @@ const Menu = ({ onAdd, orderCount, onOpenCart }) => {
     dispatch(fetchMeals());
   }, [dispatch]);
 
+  console.log('Meals in Menu state:', meals);
+
   // Filter meals based on category and search
   const filteredMeals = useMemo(() => {
     let filtered = meals;
@@ -161,7 +163,7 @@ const Menu = ({ onAdd, orderCount, onOpenCart }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredMeals.map((meal) => (
-              <MealCard key={meal.id} {...meal} onAdd={() => handleAdd(meal)} />
+              <MealCard key={meal.id} {...meal} readyInMinutes={meal.prep_time} onAdd={() => handleAdd(meal)} />
             ))}
           </div>
         )}

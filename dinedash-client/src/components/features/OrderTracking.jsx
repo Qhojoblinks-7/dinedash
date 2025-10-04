@@ -4,7 +4,7 @@ import { faCheckCircle, faFire, faClock, faTruck, faChevronRight } from '@fortaw
 
 export default function OrderTracking({ initial = 'received', onReset = () => {}, order = null }) {
   const [state, setState] = React.useState(initial);
-  const [showDetails, setShowDetails] = React.useState(false);
+  const [showDetails, setShowDetails] = React.useState(!!order);
 
   // Dynamic steps with optional ETA from backend
   const steps = [
@@ -21,7 +21,7 @@ export default function OrderTracking({ initial = 'received', onReset = () => {}
     if (order?.status) {
       const statusMap = {
         'pending': 'received',
-        'in_progress': 'cooking',
+        'in progress': 'cooking',
         'completed': 'ready',
         'cancelled': 'received'
       };
@@ -44,10 +44,12 @@ export default function OrderTracking({ initial = 'received', onReset = () => {}
     <div className="mb-4 p-3 bg-gray-50 rounded-lg transition-all duration-300">
       <h4 className="font-medium text-sm mb-2">Order Details</h4>
       <div className="text-xs text-gray-600 space-y-1">
-        <div>Order ID: <span className="font-mono">{order.id}</span></div>
+        <div>Tracking Code: <span className="font-mono">{order.tracking_code}</span></div>
+        <div>Customer: {order.customer_name || 'N/A'}</div>
+        <div>Table: {order.table_number || 'N/A'}</div>
         <div>Items: {order.items?.length || 0}</div>
         <div>Total: ${order.total_amount ? Number(order.total_amount).toFixed(2) : '0.00'}</div>
-        {order.payments && order.payments.length > 0 && <div>Payment: {order.payments[0].method}</div>}
+        {order.payment_method && <div>Payment: {order.payment_method}</div>}
         {order.notes && <div>Notes: {order.notes}</div>}
       </div>
     </div>

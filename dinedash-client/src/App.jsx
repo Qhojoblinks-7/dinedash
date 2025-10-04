@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addItem, toggleDrawer, setLastOrderId, clearCart } from './store/cartSlice';
+import { addItem, toggleDrawer } from './store/cartSlice';
 import Menu from "./components/features/Menu";
 import CartDrawer from './components/features/CartDrawer';
 import { ToastProvider } from './components/ui/Toast';
@@ -10,7 +10,6 @@ function App (){
   const drawerOpen = useSelector((s) => s.cart.drawerOpen);
   const dispatch = useDispatch();
   const [orders, setOrders] = useState([]);
-  const [currentOrder, setCurrentOrder] = useState(null);
 
   const orderCount = cart.reduce((s, it) => s + it.qty, 0);
 
@@ -49,7 +48,6 @@ function App (){
         <CartDrawer
           open={drawerOpen}
           onClose={() => dispatch(toggleDrawer(false))}
-          currentOrder={currentOrder}
         />
       </div>
     </ToastProvider>

@@ -34,7 +34,7 @@ class PaymentCreateSerializer(serializers.Serializer):
         except Order.DoesNotExist:
             raise serializers.ValidationError("Order does not exist.")
         
-        # NOTE: Assuming Order.STATUS_COMPLETED is the constant defined in Order model
+
         if order.status == 'completed' or getattr(order, 'is_paid', False):
             raise serializers.ValidationError("Order is already paid or completed.")
         
@@ -67,10 +67,7 @@ class PaymentCreateSerializer(serializers.Serializer):
 
         return data
 
-# ----------------------------------------------------------------------
-# --- CHECKOUT NESTED SERIALIZER (for CheckoutAPIView) ---
-# ----------------------------------------------------------------------
-
+# Checkout Nested Serializer (for CheckoutAPIView)
 class CheckoutPaymentSerializer(serializers.Serializer):
     """
     Validates payment details when nested within the CheckoutAPIView payload.
@@ -101,34 +98,4 @@ class CheckoutPaymentSerializer(serializers.Serializer):
         if method in ['momo'] and not data.get('phone'):
             raise serializers.ValidationError({"phone": "Phone number is required for Mobile Money payments."})
         
-        return data
-    """
-    Validates payment details when nested within the CheckoutAPIView payload.
-    It focuses only on the method and required provider/contact details.
-    """
-    # Fields that map directly to the Payment model
-    method = serializers.ChoiceField(
-        choices=Payment.PAYMENT_METHOD_CHOICES,
-        default='cash'
-    )
-    provider = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    bank_details = serializers.CharField(required=False, allow_blank=True)
-    transaction_ref = serializers.CharField(required=False, allow_blank=True)
-    payment_token = serializers.CharField(required=False, allow_blank=True)
-
-    # Optional field needed for some online gateways
-    email = serializers.EmailField(required=False, allow_blank=True)
-
-    def validate(self, data):
-        """
-        Ensures method-specific fields are present (e.g., phone for MoMo).
-        """
-        method = data.get('method')
-
-        # Example validation: Mobile Money needs a phone number
-        # Use getattr() for safe access to constants if they are not directly imported
-        if method in ['momo'] and not data.get('phone'):
-            raise serializers.ValidationError({"phone": "Phone number is required for Mobile Money payments."})
-
         return data

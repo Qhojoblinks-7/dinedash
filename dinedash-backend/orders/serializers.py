@@ -6,11 +6,11 @@ from meals.models import Meal
 from payments.models import Payment
 
 
-# --- READ/DISPLAY SERIALIZERS ---
+# Read and Display serializers
 
 class OrderItemSerializer(serializers.ModelSerializer):
     """ Read-only serializer for individual items.
-        Uses stored item_name/unit_price for historical accuracy. """
+        Uses stored item_name or unit_price for historical accuracy. """
     class Meta:
         model = OrderItem
         fields = ['meal', 'item_name', 'quantity', 'unit_price']
@@ -20,16 +20,21 @@ class OrderSerializer(serializers.ModelSerializer):
     """ General read-only serializer for Order objects. """
     items = OrderItemSerializer(many=True, read_only=True)
     payment_method = serializers.SerializerMethodField()
+    payment_tx_ref = serializers.SerializerMethodField()
 
     def get_payment_method(self, obj):
         payment = obj.payments.first()  # Get the first payment associated with the order
         return payment.method if payment else None
 
+    def get_payment_tx_ref(self, obj):
+        payment = obj.payments.first()
+        return payment.transaction_ref if payment else None
+
     class Meta:
         model = Order
         fields = [
             'id',
-            'tracking_code',   # <--- Short customer-facing code
+            'tracking_code',
             'customer_name',
             'customer_email',
             'contact_phone',
@@ -43,11 +48,12 @@ class OrderSerializer(serializers.ModelSerializer):
             'created_at',
             'items',
             'payment_method',
+            'payment_tx_ref',
         ]
         read_only_fields = ['tracking_code', 'status', 'total_amount', 'created_at']
 
 
-# --- UPDATE SERIALIZERS ---
+# UPDATE SERIALIZERS
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
     """ Serializer for updating only the order status. """
@@ -56,8 +62,7 @@ class OrderStatusUpdateSerializer(serializers.ModelSerializer):
         fields = ['status']
 
 
-# --- WRITE/CREATE SERIALIZERS ---
-
+# WRITE/CREATE SERIALIZERS
 class OrderCreateItemSerializer(serializers.Serializer):
     """ Accepts meal ID and quantity from the client. """
     meal_id = serializers.IntegerField(min_value=1)

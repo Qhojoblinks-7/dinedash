@@ -10,6 +10,7 @@ const MenuItemCard = ({
   isAvailable = true,
   quantity = 0
 }) => {
+  console.log('MenuItemCard', name, 'quantity:', quantity);
   return (
     <div className={`relative w-full max-w-xs sm:max-w-none rounded-xl shadow-lg bg-white overflow-hidden ${!isAvailable ? 'opacity-50 grayscale' : ''}`}>
       {/* Product Image */}
@@ -29,7 +30,7 @@ const MenuItemCard = ({
             {name}
           </h3>
           <span className="sm:text-md  font-bold text-gray-900 font-bold text-green-600">
-            ${price.toFixed(2)}
+            ₵{price.toFixed(2)}
           </span>
         </div>
         

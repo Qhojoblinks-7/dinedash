@@ -29,11 +29,13 @@ const CartDrawer = ({
   
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
-  const [showTracking, setShowTracking] = useState(false);
   const [orderType, setOrderType] = useState('Dine in');
-  const [tableNo] = useState('Table 4');
-  const [customerName] = useState('Floyd Miles');
+  const [tableNo, setTableNo] = useState('Table 4');
+  const [customerName, setCustomerName] = useState('Floyd Miles');
   const [fetchedOrder, setFetchedOrder] = useState(null);
+  const [trackingCode, setTrackingCode] = useState('');
+  const [showTrackingInput, setShowTrackingInput] = useState(false);
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
 
   // Checkout form state
   const [checkoutData, setCheckoutData] = useState({
@@ -50,6 +52,12 @@ const CartDrawer = ({
 
   const { addToast } = useToast();
 
+  // Update table and customer name dynamically
+  useEffect(() => {
+    if (checkoutData.tableNumber) setTableNo(`Table ${checkoutData.tableNumber}`);
+    if (checkoutData.customerName) setCustomerName(checkoutData.customerName);
+  }, [checkoutData.tableNumber, checkoutData.customerName]);
+
   const mapOrderType = (type) => {
     switch (type) {
       case 'Dine in': return 'dine_in';
@@ -63,6 +71,23 @@ const CartDrawer = ({
     if (typeof onClose === 'function') onClose();
     else dispatch(toggleDrawer(false));
   }, [onClose, dispatch]);
+
+  const handleTrackOrder = async () => {
+    if (!trackingCode.trim()) {
+      addToast({ type: 'error', title: 'Error', message: 'Please enter a tracking code.' });
+      return;
+    }
+    try {
+      const order = await apiService.getOrder(trackingCode.trim());
+      setFetchedOrder(order);
+      setShowTrackingModal(true);
+      setShowTrackingInput(false);
+      addToast({ type: 'success', title: 'Order Found', message: 'Tracking your order.' });
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      addToast({ type: 'error', title: 'Error', message: 'Order not found. Please check your tracking code.' });
+    }
+  };
   
   const handlePlaceOrder = async () => {
     // Validate required fields
@@ -111,7 +136,7 @@ const CartDrawer = ({
       dispatch(setLastOrderId(response.order.id));
       dispatch(clearCart());
       setOrderPlaced(true);
-      setShowTracking(true);
+      setShowTrackingModal(true);
       setSelectedPaymentMethod(null); // Reset payment selection
 
       // Contextual success messages
@@ -219,6 +244,7 @@ const CartDrawer = ({
           customerName={customerName}
           orderType={orderType}
           onOrderTypeChange={setOrderType}
+          onEdit={() => setShowTrackingInput(true)}
         />
 
         {/* Mobile drag handle */}
@@ -228,16 +254,31 @@ const CartDrawer = ({
 
         {/* Cart Content */}
         <div className="p-3 sm:p-4 pb-6 space-y-3 sm:space-y-4">
-          {cartItems.length === 0 ? (
+          {showTrackingInput ? (
+            <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 space-y-3">
+              <h3 className="text-sm font-semibold">Track Your Order</h3>
+              <input
+                type="text"
+                value={trackingCode}
+                onChange={(e) => setTrackingCode(e.target.value)}
+                placeholder="Enter tracking code"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleTrackOrder} bgClass="bg-green-600" textColor="text-white" className="flex-1">Track</Button>
+                <Button onClick={() => setShowTrackingInput(false)} className="border border-gray-300 bg-white text-gray-700">Cancel</Button>
+              </div>
+            </div>
+          ) : cartItems.length === 0 ? (
             <div className="text-center py-8 sm:py-10">
               <div className="text-4xl sm:text-5xl">🍽️</div>
               <p className="mt-3 text-sm sm:text-base text-gray-600 px-4">
                 Nothing on your plate yet. Hungry for something delicious? 🍲 Start browsing!
               </p>
             </div>
-          ) : showTracking ? (
+          ) : showTrackingModal ? (
             <div className="py-6">
-              <OrderTracking order={fetchedOrder || currentOrder} onReset={() => { setShowTracking(false); setOrderPlaced(false); setFetchedOrder(null); }} />
+              <OrderTracking order={fetchedOrder || currentOrder} onReset={() => { setShowTrackingModal(false); setOrderPlaced(false); setFetchedOrder(null); }} />
             </div>
           ) : orderPlaced ? (
             <div className="text-center py-8 sm:py-10 px-4">
@@ -248,7 +289,7 @@ const CartDrawer = ({
               {orderId && <div className="mt-2 text-sm text-gray-600">Order id: <span className="font-mono text-xs sm:text-sm">{orderId}</span></div>}
               <p className="mt-2 text-sm text-gray-600">Thanks — your order is being prepared. We'll notify you when it's ready.</p>
               <div className="mt-4 flex gap-2 justify-center flex-wrap">
-                <Button onClick={() => { setShowTracking(true); }} bgClass="bg-blue-900" textColor="text-white" className="text-sm">Track my order</Button>
+                <Button onClick={() => { setShowTrackingModal(true); }} bgClass="bg-blue-900" textColor="text-white" className="text-sm">Track my order</Button>
                 <Button onClick={handleClose} className="border border-blue-900 bg-white text-blue-900 text-sm">Close</Button>
               </div>
             </div>
@@ -300,16 +341,16 @@ const CartDrawer = ({
                 <div className="text-sm">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-600 text-sm">Sub Total</span>
-                    <span className="font-semibold text-gray-900 text-sm">${subtotal.toFixed(2)}</span>
+                    <span className="font-semibold text-gray-900 text-sm">₵{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600 text-sm">Tax 5%</span>
-                    <span className="font-semibold text-gray-900 text-sm">${(subtotal * 0.05).toFixed(2)}</span>
+                    <span className="font-semibold text-gray-900 text-sm">₵{(subtotal * 0.05).toFixed(2)}</span>
                   </div>
                   <div className="h-px bg-gray-200" />
                   <div className="flex justify-between items-center mt-2 font-bold text-base sm:text-lg">
                     <span className="text-gray-900">Total Amount</span>
-                    <span className="text-gray-900">${total.toFixed(2)}</span>
+                    <span className="text-gray-900">₵{total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -512,13 +553,28 @@ const CartDrawer = ({
                   textColor="text-white"
                   disabled={cartItems.length === 0 || !selectedPaymentMethod}
                 >
-                  Place Order - ${total}
+                  Place Order - ₵{total}
                 </Button>
               </div>
             </>
           )}
         </div>
       </aside>
+
+      {/* Tracking Modal */}
+      {showTrackingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <button
+              onClick={() => setShowTrackingModal(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+            <OrderTracking order={fetchedOrder} onReset={() => setShowTrackingModal(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

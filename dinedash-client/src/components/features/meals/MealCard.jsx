@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCirclePlus, faCircleMinus, faDrumstickBite } from '@fortawesome/free-solid-svg-icons';
+import { faCirclePlus, faCircleMinus, faDrumstickBite, faLeaf } from '@fortawesome/free-solid-svg-icons';
 import { useToast } from '../../ui/toastContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { addItem, decrementItem } from '../../../store/cartSlice';
@@ -15,10 +15,11 @@ const MealCard = ({
   description,
   price,
   image,
-  isVeg = false,
+  is_veg: isVeg = false,
   available = true,
   readyInMinutes = null,
 }) => {
+  console.log(`MealCard for ${name}: isVeg =`, isVeg);
   const { addToast } = useToast();
   const dispatch = useDispatch();
   const [showAnimation, setShowAnimation] = useState(false);
@@ -68,7 +69,7 @@ const MealCard = ({
         <div className="mt-4 flex items-center justify-between">
           <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug">{name}</h3>
           <div className="text-lg font-semibold text-gray-900">
-  ${price ? Number(price).toFixed(2) : '0.00'}
+  ₵{price ? Number(price).toFixed(2) : '0.00'}
 </div>
 
         </div>
@@ -76,11 +77,26 @@ const MealCard = ({
         {/* Description */}
         <p className="mt-3 text-sm sm:text-base text-gray-600 leading-relaxed">{description}</p>
 
+        {/* Prep Time */}
+        {available && readyInMinutes && (
+          <div className="mt-2 text-sm text-gray-500">
+            Prep time: {readyInMinutes} mins
+          </div>
+        )}
+
         {/* Non Veg (just above buttons) */}
-        {!isVeg && available && (
+        {!isVeg && (
           <div className="mt-3 flex items-center justify-end text-red-500 font-medium text-sm sm:text-base">
             <FontAwesomeIcon icon={faDrumstickBite} />
             <span>Non Veg</span>
+          </div>
+        )}
+
+        {/* Veg (just above buttons) */}
+        {isVeg && (
+          <div className="mt-3 flex items-center justify-end text-green-500 font-medium text-sm sm:text-base">
+            <FontAwesomeIcon icon={faLeaf} />
+            <span>Veg</span>
           </div>
         )}
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCardIcon, QrCodeIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
-const PaymentActions = ({ onSendToKitchen, onFinalizePayment, orderIsSent }) => {
+const PaymentActions = ({ order, verifyingPayment, onSendToKitchen, onFinalizePayment, onVerifyPayment, orderIsSent }) => {
   const [selectedPayment, setSelectedPayment] = useState(null);
 
   const paymentButtons = [
@@ -29,7 +29,11 @@ const PaymentActions = ({ onSendToKitchen, onFinalizePayment, orderIsSent }) => 
         ))}
       </div>
 
-      {!orderIsSent ? (
+      {order && order.status === 'pending' ? (
+        <button onClick={onVerifyPayment} disabled={verifyingPayment} className="w-full mt-4 bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50">
+          {verifyingPayment ? 'Verifying...' : 'Verify Payment'}
+        </button>
+      ) : !orderIsSent ? (
         <button onClick={onSendToKitchen} className="w-full mt-4 bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors">
           Send to Kitchen
         </button>

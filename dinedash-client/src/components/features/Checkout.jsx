@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faCreditCard, faMoneyBillAlt, faMobileAlt, faUniversity } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faCreditCard, faMoneyBillAlt, faMobileAlt, faUniversity, faUtensils } from '@fortawesome/free-solid-svg-icons';
 import Button from '../ui/Button';
 import { useToast } from '../ui/toastContext';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearCart } from '../../store/cartSlice';
-import { apiService } from '../../services/api';
 
 const Checkout = ({ onClose, onSuccess, onCheckout }) => {
   const { addToast } = useToast();
@@ -38,10 +37,10 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
   const total = subtotal + tax + deliveryFee;
 
   const orderTypes = [
-    { value: 'dine_in', label: 'Dine In', icon: '🍽️' },
-    { value: 'takeaway', label: 'Takeaway', icon: '🥡' },
-    { value: 'delivery', label: 'Delivery', icon: '🚚' },
-    { value: 'pickup', label: 'Pickup', icon: '🏪' },
+    { value: 'dine_in', label: 'Dine In', icon: faUtensils },
+    { value: 'takeaway', label: 'Takeaway', icon: faMobileAlt },
+    { value: 'delivery', label: 'Delivery', icon: faCreditCard },
+    { value: 'pickup', label: 'Pickup', icon: faUniversity },
   ];
 
   const paymentMethods = [
@@ -359,21 +358,21 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>₵{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tax (5%)</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>₵{tax.toFixed(2)}</span>
               </div>
               {deliveryFee > 0 && (
                 <div className="flex justify-between">
                   <span>Delivery Fee</span>
-                  <span>${deliveryFee.toFixed(2)}</span>
+                  <span>₵{deliveryFee.toFixed(2)}</span>
                 </div>
               )}
               <div className="border-t pt-2 flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>₵{total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -387,7 +386,7 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
             disabled={isSubmitting || cartItems.length === 0}
             className="py-4 text-lg font-semibold"
           >
-            {isSubmitting ? 'Processing...' : `Place Order - $${total.toFixed(2)}`}
+            {isSubmitting ? 'Processing...' : `Place Order - ₵${total.toFixed(2)}`}
           </Button>
         </div>
       </div>

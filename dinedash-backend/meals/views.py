@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, parsers
 from .models import Meal
 from .serializers import MealSerializer
 
@@ -6,13 +6,17 @@ class IsStaffOrReadOnly(permissions.BasePermission):
     """
     Only staff users can create/update/delete.
     Everyone else can read (GET, HEAD, OPTIONS).
+    For development, allow POST without auth.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
+        # Temporarily allow POST for development
+        if request.method == 'POST':
+            return True
         return request.user and request.user.is_staff
 
-class MealViewSet(viewsets.ModelViewSet):  # <- Allow CRUD for staff
+class MealViewSet(viewsets.ModelViewSet):
     """
     Staff can create/update/delete meals.
     Everyone can view meals.
@@ -27,12 +31,13 @@ class MealViewSet(viewsets.ModelViewSet):  # <- Allow CRUD for staff
     queryset = Meal.objects.all()
     serializer_class = MealSerializer
     permission_classes = [IsStaffOrReadOnly]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def get_authenticators(self):
         """
         Override authentication for GET requests to allow anonymous access.
         """
         if self.request.method in permissions.SAFE_METHODS:
-            return []  # No authentication required for GET requests
+            return []  # No authentication required for GET requests for development and testing purposes
         return super().get_authenticators()
 

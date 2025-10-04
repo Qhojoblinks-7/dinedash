@@ -40,10 +40,10 @@ const OrderList = ({ orders, loading, error }) => {
                 </p>
               </div>
               <div className="text-right">
-                <div className="font-semibold">${order.total_amount}</div>
+                <div className="font-semibold">₵{order.total_amount}</div>
                 <div className={`text-sm px-2 py-1 rounded ${
                   order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                  order.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                  order.status === 'in progress' ? 'bg-yellow-100 text-yellow-800' :
                   order.status === 'pending' ? 'bg-blue-100 text-blue-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>

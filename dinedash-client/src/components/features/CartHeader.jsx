@@ -3,7 +3,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt } from '@fortawesome/free-solid-svg-icons';
 
-const CartHeader = ({ tableNo, customerName, orderType, onOrderTypeChange }) => {
+const CartHeader = ({ tableNo, customerName, orderType, onOrderTypeChange, onEdit }) => {
   const types = ['Dine in', 'Take Away', 'Delivery'];
 
   return (
@@ -13,7 +13,7 @@ const CartHeader = ({ tableNo, customerName, orderType, onOrderTypeChange }) => 
           <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900">{tableNo}</h1>
           <p className="text-xs sm:text-sm text-gray-500">{customerName}</p>
         </div>
-        <button className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors" aria-label="Edit details">
+        <button onClick={onEdit} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors" aria-label="Edit details">
           <FontAwesomeIcon icon={faPencilAlt} className="text-sm sm:text-base" />
         </button>
       </div>
