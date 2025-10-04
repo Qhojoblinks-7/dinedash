@@ -8,17 +8,13 @@ import Button from './ui/Button';
 import { BarChart } from './ui/Chart';
 import { Select, SelectItem } from './ui/Select';
 
-// Constants
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const EXPENSE_DATA = [
-  { icon: faUtensils, name: 'Food Supplies', description: 'Ingredients and supplies', amount: 2450.00 },
-  { icon: faCoins, name: 'Staff Salaries', description: 'Monthly payroll', amount: 3200.00 },
-  { icon: faShoppingCart, name: 'Utilities', description: 'Electricity, water, gas', amount: 850.00 },
+  { icon: faUtensils, name: 'Food Supplies', description: 'Ingredients and supplies', amount: 0 },
+  { icon: faCoins, name: 'Staff Salaries', description: 'Monthly payroll', amount: 0 },
+  { icon: faShoppingCart, name: 'Utilities', description: 'Electricity, water, gas', amount: 0 },
 ];
 
-/**
- * Accounting component for displaying restaurant financial analytics
- */
 const Accounting = () => {
   const [financials, setFinancials] = useState({
     total_revenue: 0,
@@ -81,9 +77,8 @@ const Accounting = () => {
         const response = await axios.get(`${API_BASE_URL}/api/orders/analytics/?${params}`);
         setFinancials(response.data);
         setError(null);
-      } catch (err) {
+      } catch {
         setError('Failed to load analytics data. Please try again.');
-        console.error('Failed to fetch analytics', err);
       } finally {
         setLoading(false);
       }
@@ -172,7 +167,7 @@ const Accounting = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">₵{(financials.total_revenue || 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <p className="text-xs text-muted-foreground">Compared to last month</p>
           </CardContent>
         </Card>
 
@@ -183,7 +178,7 @@ const Accounting = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{financials.total_orders || 0}</div>
-            <p className="text-xs text-muted-foreground">+15.3% from last month</p>
+            <p className="text-xs text-muted-foreground">Compared to last month</p>
           </CardContent>
         </Card>
 
@@ -194,7 +189,7 @@ const Accounting = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">₵{(financials.avg_order_value || 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">+5.2% from last month</p>
+            <p className="text-xs text-muted-foreground">Compared to last month</p>
           </CardContent>
         </Card>
 
@@ -205,7 +200,7 @@ const Accounting = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">₵{(financials.today_revenue || 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">+12.5% from yesterday</p>
+            <p className="text-xs text-muted-foreground">Compared to yesterday</p>
           </CardContent>
         </Card>
       </div>
@@ -362,15 +357,15 @@ const Accounting = () => {
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-green-50 border border-green-200">
               <h4 className="font-medium text-green-800">Revenue Growth</h4>
-              <p className="text-sm text-green-700">Your revenue has increased by 20.1% compared to last month. Keep up the excellent work!</p>
+              <p className="text-sm text-green-700">Monitor revenue trends to identify growth opportunities.</p>
             </div>
             <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
               <h4 className="font-medium text-blue-800">Popular Items</h4>
-              <p className="text-sm text-blue-700">Focus on promoting your top-selling items like {financials.most_profitable?.[0]?.name || 'popular dishes'} to maximize profits.</p>
+              <p className="text-sm text-blue-700">Analyze top-selling items to optimize menu offerings.</p>
             </div>
             <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
               <h4 className="font-medium text-purple-800">Order Value</h4>
-              <p className="text-sm text-purple-700">Consider upselling techniques to increase average order value from ₵{(financials.avg_order_value || 0).toFixed(2)}.</p>
+              <p className="text-sm text-purple-700">Focus on strategies to improve average order value.</p>
             </div>
           </div>
         </CardContent>

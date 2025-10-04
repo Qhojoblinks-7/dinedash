@@ -1,21 +1,17 @@
-// src/store/mealsSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Adjust base URL depending on your backend setup
 const API_URL = 'http://localhost:8000/api/meals/';
 
-// Thunk: fetch meals from backend
 export const fetchMeals = createAsyncThunk('meals/fetchMeals', async (_, thunkAPI) => {
   try {
     const response = await axios.get(API_URL);
-    return response.data; // should be an array of meals
+    return response.data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
   }
 });
 
-// Thunk: create a new meal
 export const createMeal = createAsyncThunk('meals/createMeal', async (mealData, thunkAPI) => {
   try {
     const response = await axios.post(API_URL, mealData, {
@@ -23,9 +19,8 @@ export const createMeal = createAsyncThunk('meals/createMeal', async (mealData, 
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data; // the created meal
+    return response.data;
   } catch (error) {
-    console.error('Create meal error:', error.response?.data);
     return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
   }
 });
@@ -38,7 +33,6 @@ const mealsSlice = createSlice({
     error: null,
   },
   reducers: {
-    // Optional: allow local updates
     addMeal: (state, action) => {
       state.meals.push(action.payload);
     },

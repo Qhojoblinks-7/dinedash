@@ -11,13 +11,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchMeals, createMeal } from '../store/mealsSlice';
 import { fetchOrders, updateOrderStatus, finalizePayment, verifyPayment } from '../store/ordersSlice';
 
-// --- Dashboard Component ---
 const Dashboard = () => {
   const { addToast } = useToast();
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('Menu');
 
-  // Use Redux state for meals and orders
   const mealsState = useSelector(state => state.meals);
   const { meals: menuItems, loading: mealsLoading, error: mealsError } = mealsState;
   const { meals } = mealsState;
@@ -42,7 +40,6 @@ const Dashboard = () => {
 
   const handleSearchChange = (query) => {
     setSearchQuery(query);
-    // Check if query matches an order tracking code
     const matchingOrder = orders.find(order => order.tracking_code.toLowerCase().includes(query.toLowerCase()));
     if (matchingOrder) {
       setSelectedOrder(matchingOrder);
@@ -57,24 +54,20 @@ const Dashboard = () => {
     setShowAddMeal(true);
   };
 
-  // Fetch data on component mount
   useEffect(() => {
-    // Dispatch Redux actions to fetch meals and orders
     dispatch(fetchMeals());
     dispatch(fetchOrders());
   }, [dispatch]);
 
-  // Periodic polling for orders (every 30 seconds)
   useEffect(() => {
     const pollOrders = () => {
       dispatch(fetchOrders());
     };
 
-    const interval = setInterval(pollOrders, 30000); // 30 seconds
+    const interval = setInterval(pollOrders, 30000);
     return () => clearInterval(interval);
   }, [dispatch]);
 
-  // Calculate ordered quantities from pending orders
   const calculateOrderedQuantities = () => {
     const quantities = {};
     orders.forEach(order => {
@@ -114,22 +107,16 @@ const Dashboard = () => {
   });
 
 
-  // Transform meals data to match component expectations
   const transformedMenuItems = filteredMeals.map(meal => ({
     id: meal.id.toString(),
     name: meal.name,
-    description: meal.description || 'No description available',
+    description: meal.description || '',
     image: meal.image ? `http://localhost:8000${meal.image}` : null,
     price: parseFloat(meal.price),
-    categoryId: 'main', // Default category since backend doesn't have categories yet
+    categoryId: meal.category || 'main',
     isAvailable: meal.is_available,
     isVeg: meal.is_veg,
     orderedQuantity: orderedQuantities[meal.id.toString()] || 0,
-    stats: [{
-      value: meal.is_veg ? 1 : 0,
-      type: meal.is_veg ? 'veg' : 'non-veg',
-      color: meal.is_veg ? 'green' : 'red'
-    }]
   }));
 
   const loading = mealsLoading || ordersLoading;
@@ -154,20 +141,15 @@ const Dashboard = () => {
 
   const handleSendToKitchen = async () => {
     if (selectedOrder) {
-      // Check if payment is confirmed for pending orders
       if (selectedOrder.status === 'pending') {
         addToast('Please verify payment before sending to kitchen.', 'error');
         return;
       }
-      console.log('Sending order to kitchen:', selectedOrder.id, selectedOrder.status, 'items:', selectedOrder.items);
       try {
         await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'in progress' })).unwrap();
-        console.log('Order status updated');
-        dispatch(fetchOrders()); // Refresh orders to update quantities
-        console.log('Orders fetched');
+        dispatch(fetchOrders());
         addToast('Order sent to kitchen successfully!', 'success');
-      } catch (error) {
-        console.error('Failed to send order to kitchen', error);
+      } catch {
         addToast('Failed to send order to kitchen.', 'error');
       }
     }
