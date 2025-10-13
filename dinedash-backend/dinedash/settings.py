@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-1t79_w17n6n6jb(gvo-gjl4#fk45k#9r!gg%9k#_$)eavkbx*k')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
+ALLOWED_HOSTS = ['dinedash-2-lh2q.onrender.com', 'localhost', '127.0.0.1'] + (os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else [])
 
 # Applications
 INSTALLED_APPS = [
