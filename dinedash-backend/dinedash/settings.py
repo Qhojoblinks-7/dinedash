@@ -150,7 +150,7 @@ if DEBUG:
     CORS_EXPOSE_HEADERS = ["Content-Type", "Authorization"]
 else:
     # Production-safe origins
-    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else []
+    CORS_ALLOWED_ORIGINS = ['https://dinedash-w5bz.vercel.app'] + (os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else [])
 
 # Security settings for production
 if not DEBUG:
