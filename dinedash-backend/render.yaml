@@ -3,8 +3,8 @@ services:
     name: dinedash-backend
     runtime: python
     rootDir: dinedash-backend
-    buildCommand: "./build.sh"
-    startCommand: "./start.sh"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "python manage.py migrate && gunicorn --config gunicorn.conf.py dinedash.wsgi:application"
     envVars:
       - key: DEBUG
         value: "False"
