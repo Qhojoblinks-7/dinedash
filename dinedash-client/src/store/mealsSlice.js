@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/meals/';
+const API_URL = import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api/meals/` : 'https://dinedash-2-lh2q.onrender.com/api/meals/';
 
 export const fetchMeals = createAsyncThunk('meals/fetchMeals', async (_, thunkAPI) => {
   try {
