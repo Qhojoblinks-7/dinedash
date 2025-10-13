@@ -4,13 +4,18 @@ services:
     runtime: python
     rootDir: dinedash-backend
     # Install dependencies, collect Django static files, and run migrations
+    # NOTE: If your Dockerfile is not creating the /app/logs directory, 
+    # you might still need to fix that logging issue separately.
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
-    # CORRECTED: Binds Gunicorn to the required host and port (0.0.0.0:$PORT)
-    startCommand: "gunicorn dinedash.wsgi:application --bind 0.0.0.0:$PORT"
+    
+    # CRITICAL FIX: Pass the DJANGO_SETTINGS_MODULE as an environment variable 
+    # directly in the start command to prevent the ModuleNotFoundError.
+    startCommand: "gunicorn dinedash.wsgi:application --bind 0.0.0.0:$PORT --env DJANGO_SETTINGS_MODULE=dinedash.settings"
+    
     envVars:
-      # Django Settings Module is correctly set to load settings
+      # This is kept for clarity, but the 'startCommand' now ensures it's used correctly
       - key: DJANGO_SETTINGS_MODULE
-        value: dinedash.settings
+        value: dinedash.settings 
       - key: DEBUG
         value: "False"
       - key: SECRET_KEY
