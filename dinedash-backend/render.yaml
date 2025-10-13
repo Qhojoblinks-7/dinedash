@@ -10,7 +10,7 @@ services:
     
     # CRITICAL FIX: Pass the DJANGO_SETTINGS_MODULE as an environment variable 
     # directly in the start command to prevent the ModuleNotFoundError.
-    startCommand: "gunicorn dinedash.wsgi:application --bind 0.0.0.0:$PORT --env DJANGO_SETTINGS_MODULE=dinedash.settings"
+    startCommand: "DJANGO_SETTINGS_MODULE=dinedash.settings gunicorn dinedash.wsgi:application --bind 0.0.0.0:$PORT"
     
     envVars:
       # This is kept for clarity, but the 'startCommand' now ensures it's used correctly
