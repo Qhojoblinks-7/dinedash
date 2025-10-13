@@ -4,7 +4,7 @@ services:
     runtime: python
     rootDir: dinedash-backend
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT dinedash.wsgi:application"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 dinedash.wsgi:application"
     envVars:
       - key: DEBUG
         value: "False"
