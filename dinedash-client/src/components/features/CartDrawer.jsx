@@ -111,7 +111,7 @@ const CartDrawer = ({
           delivery_instructions: checkoutData.deliveryInstructions,
           pickup_time: checkoutData.pickupTime || null,
           order_type: mapOrderType(orderType),
-          items: cartItems.map(item => ({ meal: item.id, quantity: item.qty }))
+          items: cartItems.map(item => ({ meal_id: item.id, quantity: item.qty }))
         },
         payment: {
           method: selectedPaymentMethod,
