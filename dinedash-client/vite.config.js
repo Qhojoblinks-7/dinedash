@@ -14,7 +14,7 @@ export default defineConfig({
     // Proxy /api requests to the Django backend during development
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://dinedash-2-lh2q.onrender.com',
         changeOrigin: true,
         secure: false,
       },
