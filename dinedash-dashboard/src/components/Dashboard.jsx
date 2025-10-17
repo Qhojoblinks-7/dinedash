@@ -113,7 +113,7 @@ const Dashboard = () => {
       id: meal.id.toString(),
       name: meal.name,
       description: meal.description || '',
-      image: meal.image ? `http://localhost:8000${meal.image}` : null,
+      image: meal.image ? `https://dinedash-2-lh2q.onrender.com${meal.image}` : null,
       price: parseFloat(meal.price),
       categoryId: meal.category || 'main',
       isAvailable: meal.is_available,

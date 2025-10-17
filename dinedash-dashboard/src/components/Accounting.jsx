@@ -8,7 +8,7 @@ import Button from './ui/Button';
 import { BarChart } from './ui/Chart';
 import { Select, SelectItem } from './ui/Select';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dinedash-2-lh2q.onrender.com';
 const EXPENSE_DATA = [
   { icon: faUtensils, name: 'Food Supplies', description: 'Ingredients and supplies', amount: 0 },
   { icon: faCoins, name: 'Staff Salaries', description: 'Monthly payroll', amount: 0 },

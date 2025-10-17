@@ -4,7 +4,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 const OrderedItem = ({ item, meals, onRemove }) => {
   const price = parseFloat(item.unit_price) || 0;
   const meal = meals?.find(m => m.id == item.meal);
-  const imageUrl = meal?.image ? `http://localhost:8000${meal.image}` : null;
+  const imageUrl = meal?.image ? `https://dinedash-2-lh2q.onrender.com${meal.image}` : null;
   return (
     <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
       <div className="flex items-center gap-3">
