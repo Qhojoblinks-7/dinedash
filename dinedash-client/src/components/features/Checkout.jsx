@@ -87,18 +87,22 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
 
     try {
       const checkoutPayload = {
-        customer_name: orderContext.customerName,
-        order_type: orderContext.type,
-        table_number: orderContext.tableNumber,
-        delivery_address: orderContext.deliveryAddress,
-        contact_phone: orderContext.contactPhone,
-        delivery_instructions: orderContext.deliveryInstructions,
-        pickup_time: orderContext.pickupTime,
-        method: payment.method,
-        provider: payment.provider,
-        phone: payment.phone,
-        bank_details: payment.bankDetails,
-        transaction_ref: payment.transactionRef,
+        order: {
+          customer_name: orderContext.customerName,
+          order_type: orderContext.type,
+          table_number: orderContext.tableNumber,
+          delivery_address: orderContext.deliveryAddress,
+          contact_phone: orderContext.contactPhone,
+          delivery_instructions: orderContext.deliveryInstructions,
+          pickup_time: orderContext.pickupTime,
+        },
+        payment: {
+          method: payment.method,
+          provider: payment.provider,
+          phone: payment.phone,
+          bank_details: payment.bankDetails,
+          transaction_ref: payment.transactionRef,
+        }
       };
 
       await onCheckout(checkoutPayload);
