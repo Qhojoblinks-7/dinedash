@@ -23,14 +23,32 @@ export const fetchMeals = createAsyncThunk('meals/fetchMeals', async (_, thunkAP
 
 export const createMeal = createAsyncThunk('meals/createMeal', async (mealData, thunkAPI) => {
   try {
-    const response = await axios.post(API_URL, mealData, {
+    console.log('Creating meal with data:', mealData);
+    const formData = new FormData();
+
+    // Append all fields to FormData
+    Object.keys(mealData).forEach(key => {
+      if (mealData[key] !== null && mealData[key] !== undefined) {
+        formData.append(key, mealData[key]);
+      }
+    });
+
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    const response = await axios.post(API_URL, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    console.log('Meal creation response:', response.data);
     return response.data;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    console.error('Meal creation error:', error.response?.data || error.message);
+    // Return the actual error data for proper handling
+    return thunkAPI.rejectWithValue(error.response?.data || { message: error.message });
   }
 });
 

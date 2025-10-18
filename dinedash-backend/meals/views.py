@@ -39,3 +39,43 @@ class MealViewSet(viewsets.ModelViewSet):
         """
         return []  # No authentication required for development and testing purposes
 
+    def create(self, request, *args, **kwargs):
+        print(f"DEBUG: Creating meal with data: {request.data}")
+        print(f"DEBUG: Request FILES: {request.FILES}")
+        print(f"DEBUG: Request POST: {request.POST}")
+        logger.info(f"Creating meal with data: {request.data}")
+        logger.info(f"Request FILES: {request.FILES}")
+        logger.info(f"Request POST: {request.POST}")
+        try:
+            response = super().create(request, *args, **kwargs)
+            print(f"DEBUG: Meal created successfully: {response.data}")
+            logger.info(f"Meal created successfully: {response.data}")
+            return response
+        except Exception as e:
+            print(f"DEBUG: Error creating meal: {str(e)}")
+            print(f"DEBUG: Request data keys: {list(request.data.keys()) if hasattr(request.data, 'keys') else 'No keys'}")
+            logger.error(f"Error creating meal: {str(e)}")
+            logger.error(f"Request data keys: {list(request.data.keys()) if hasattr(request.data, 'keys') else 'No keys'}")
+            raise
+
+    def update(self, request, *args, **kwargs):
+        logger.info(f"Updating meal {kwargs.get('pk')} with data: {request.data}")
+        try:
+            response = super().update(request, *args, **kwargs)
+            logger.info(f"Meal updated successfully: {response.data}")
+            return response
+        except Exception as e:
+            logger.error(f"Error updating meal: {str(e)}")
+            raise
+
+    def destroy(self, request, *args, **kwargs):
+        meal_id = kwargs.get('pk')
+        logger.info(f"Deleting meal {meal_id}")
+        try:
+            response = super().destroy(request, *args, **kwargs)
+            logger.info(f"Meal {meal_id} deleted successfully")
+            return response
+        except Exception as e:
+            logger.error(f"Error deleting meal {meal_id}: {str(e)}")
+            raise
+

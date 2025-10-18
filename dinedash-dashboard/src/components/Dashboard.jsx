@@ -189,11 +189,17 @@ const Dashboard = () => {
     formData.append('price', newMeal.price);
     formData.append('prep_time', newMeal.prep_time);
     formData.append('category', newMeal.category);
-    formData.append('is_veg', newMeal.is_veg);
-    formData.append('is_available', newMeal.is_available);
+    formData.append('is_veg', newMeal.is_veg.toString());
+    formData.append('is_available', newMeal.is_available.toString());
     if (newMeal.image) {
       formData.append('image', newMeal.image);
     }
+
+    console.log('FormData being sent:');
+    for (let [key, value] of formData.entries()) {
+      console.log(key, ':', value);
+    }
+
     try {
       await dispatch(createMeal(formData)).unwrap();
       setShowAddMeal(false);
@@ -208,8 +214,17 @@ const Dashboard = () => {
         is_available: true,
       });
       addToast('Meal added successfully!', 'success');
-    } catch {
-      addToast('Failed to add meal.', 'error');
+    } catch (error) {
+      console.error('Meal creation failed:', error);
+      // Display validation errors properly
+      if (error && typeof error === 'object') {
+        const errorMessages = Object.entries(error)
+          .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+          .join('; ');
+        addToast(`Failed to add meal: ${errorMessages}`, 'error');
+      } else {
+        addToast(`Failed to add meal: ${JSON.stringify(error)}`, 'error');
+      }
     }
   };
 
@@ -253,7 +268,7 @@ const Dashboard = () => {
                 </div>
               ) : error ? (
                 <div className="col-span-full text-center py-8">
-                  <div className="text-red-600 text-lg">Error loading menu: {error}</div>
+                  <div className="text-red-600 text-lg">Error loading menu: {typeof error === 'object' ? JSON.stringify(error) : error}</div>
                 </div>
               ) : (
                 transformedMenuItems.map((item) => (
