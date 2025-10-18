@@ -30,7 +30,7 @@ class MealViewSet(viewsets.ModelViewSet):
     """
     queryset = Meal.objects.all()
     serializer_class = MealSerializer
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [permissions.AllowAny]  # Allow all operations for development
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def get_authenticators(self):
