@@ -6,9 +6,13 @@ class IsStaffOrReadOnly(permissions.BasePermission):
     """
     Only staff users can create/update/delete.
     Everyone else can read (GET, HEAD, OPTIONS).
+    For development, allow POST/PUT/DELETE without auth.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
+            return True
+        # Temporarily allow POST/PUT/DELETE for development
+        if request.method in ['POST', 'PUT', 'DELETE']:
             return True
         return request.user and request.user.is_staff
 
@@ -31,9 +35,7 @@ class MealViewSet(viewsets.ModelViewSet):
 
     def get_authenticators(self):
         """
-        Override authentication for GET requests to allow anonymous access.
+        Override authentication for all requests to allow anonymous access for development.
         """
-        if self.request.method in permissions.SAFE_METHODS:
-            return []  # No authentication required for GET requests for development and testing purposes
-        return super().get_authenticators()
+        return []  # No authentication required for development and testing purposes
 

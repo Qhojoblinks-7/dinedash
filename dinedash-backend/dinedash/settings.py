@@ -151,6 +151,26 @@ if DEBUG:
 else:
     # Production-safe origins
     CORS_ALLOWED_ORIGINS = ['https://dinedash-w5bz.vercel.app', 'https://dinedash-w5bz-59tifljix-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-w5bz-fxsrndbwh-qhojoblinks-7s-projects.vercel.app','https://dinedash-yz8v.vercel.app','https://dinedash-yw4z-git-main-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z-e592jwuzz-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z.vercel.app','https://dinedash-yz8v-ltmdgkpb5-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-yw4z-kj66zshlm-qhojoblinks-7s-projects.vercel.app','http://localhost:5173','http://localhost:5174','http://localhost:5175','http://localhost:5176', 'http://localhost:8000'] + (os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else [])
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOW_METHODS = [
+        'DELETE',
+        'GET',
+        'OPTIONS',
+        'PATCH',
+        'POST',
+        'PUT',
+    ]
+    CORS_ALLOW_HEADERS = [
+        'accept',
+        'accept-encoding',
+        'authorization',
+        'content-type',
+        'dnt',
+        'origin',
+        'user-agent',
+        'x-csrftoken',
+        'x-requested-with',
+    ]
 
 # Security settings for production
 if not DEBUG:
