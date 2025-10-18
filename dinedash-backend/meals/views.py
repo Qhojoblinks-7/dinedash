@@ -1,6 +1,9 @@
+import logging
 from rest_framework import viewsets, permissions, parsers
 from .models import Meal
 from .serializers import MealSerializer
+
+logger = logging.getLogger(__name__)
 
 class IsStaffOrReadOnly(permissions.BasePermission):
     """
@@ -43,6 +46,21 @@ class MealViewSet(viewsets.ModelViewSet):
         print(f"DEBUG: Creating meal with data: {request.data}")
         print(f"DEBUG: Request FILES: {request.FILES}")
         print(f"DEBUG: Request POST: {request.POST}")
+        print(f"DEBUG: Content-Type: {request.META.get('CONTENT_TYPE')}")
+        print(f"DEBUG: Raw body length: {len(request.body) if request.body else 0}")
+
+        # Try to manually parse multipart data
+        if 'multipart/form-data' in request.META.get('CONTENT_TYPE', ''):
+            print("DEBUG: Detected multipart form data")
+            try:
+                from django.http.multipartparser import MultiPartParser
+                parser = MultiPartParser(request.META, request, upload_handlers=request.upload_handlers)
+                post_data, files_data = parser.parse()
+                print(f"DEBUG: Manually parsed POST: {post_data}")
+                print(f"DEBUG: Manually parsed FILES: {files_data}")
+            except Exception as parse_error:
+                print(f"DEBUG: Manual parsing failed: {parse_error}")
+
         logger.info(f"Creating meal with data: {request.data}")
         logger.info(f"Request FILES: {request.FILES}")
         logger.info(f"Request POST: {request.POST}")
