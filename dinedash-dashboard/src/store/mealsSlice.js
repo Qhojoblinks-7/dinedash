@@ -6,7 +6,8 @@ import axios from 'axios';
  */
 const getApiBaseUrl = () => {
   // Use environment variable for production, fallback to localhost for development
-  return import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/meals/` : 'http://localhost:8000/api/meals/';
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  return baseUrl.endsWith('/') ? `${baseUrl}meals/` : `${baseUrl}/meals/`;
 };
 
 const API_URL = getApiBaseUrl();

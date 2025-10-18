@@ -10,8 +10,8 @@ const getApiBaseUrl = () => {
 };
 
 const BASE_URL = getApiBaseUrl();
-const API_URL = `${BASE_URL}orders/`;
-const PAYMENT_API_URL = `${BASE_URL}payments/`;
+const API_URL = BASE_URL.endsWith('/') ? `${BASE_URL}orders/` : `${BASE_URL}/orders/`;
+const PAYMENT_API_URL = BASE_URL.endsWith('/') ? `${BASE_URL}payments/` : `${BASE_URL}/payments/`;
 
 export const fetchOrders = createAsyncThunk('orders/fetchOrders', async (_, thunkAPI) => {
     try {
