@@ -1,7 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const BASE_URL = 'https://dinedash-2-lh2q.onrender.com/api/'; 
+/**
+ * Environment-based URL resolution with proper fallback logic
+ */
+const getApiBaseUrl = () => {
+  // Use environment variable for production, fallback to localhost for development
+  return import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+};
+
+const BASE_URL = getApiBaseUrl();
 const API_URL = `${BASE_URL}orders/`;
 const PAYMENT_API_URL = `${BASE_URL}payments/`;
 
@@ -43,10 +51,13 @@ export const verifyPayment = createAsyncThunk('orders/verifyPayment', async ({ o
 // Thunk: update order status
 export const updateOrderStatus = createAsyncThunk('orders/updateOrderStatus', async ({ orderId, status }, thunkAPI) => {
     try {
+        console.log('Updating order status:', orderId, 'to', status);
         // NOTE: Ensure your backend has an endpoint for PATCH /api/orders/{orderId}/status/
         const response = await axios.patch(`${API_URL}${orderId}/status/`, { status });
+        console.log('Order status update response:', response.data);
         return response.data; // updated order
     } catch (error) {
+        console.error('Error updating order status:', error);
         return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
     }
 });

@@ -58,10 +58,10 @@ const CartDrawer = ({
 
   const mapOrderType = (type) => {
     switch (type) {
-      case 'Dine in': return 'dine_in';
+      case 'Dine in': return 'dine in';
       case 'Take Away': return 'takeaway';
       case 'Delivery': return 'delivery';
-      default: return 'dine_in';
+      default: return 'dine in';
     }
   };
 

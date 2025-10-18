@@ -12,7 +12,7 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
   const cartItems = useSelector(state => state.cart.items);
 
   const [orderContext, setOrderContext] = useState({
-    type: 'dine_in',
+    type: 'dine in',
     customerName: '',
     tableNumber: '',
     deliveryAddress: '',
@@ -37,7 +37,7 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
   const total = subtotal + tax + deliveryFee;
 
   const orderTypes = [
-    { value: 'dine_in', label: 'Dine In', icon: faUtensils },
+    { value: 'dine in', label: 'Dine In', icon: faUtensils },
     { value: 'takeaway', label: 'Takeaway', icon: faMobileAlt },
     { value: 'delivery', label: 'Delivery', icon: faCreditCard },
     { value: 'pickup', label: 'Pickup', icon: faUniversity },
@@ -62,7 +62,7 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
     const { type, tableNumber, deliveryAddress, contactPhone } = orderContext;
     const { method, provider, phone } = payment;
 
-    if (type === 'dine_in' && !tableNumber) {
+    if (type === 'dine in' && !tableNumber) {
       addToast({ type: 'error', title: 'Validation Error', message: 'Table number is required for dine-in orders.' });
       return false;
     }
@@ -104,6 +104,7 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
           transaction_ref: payment.transactionRef,
         }
       };
+
 
       await onCheckout(checkoutPayload);
 
@@ -161,7 +162,7 @@ const Checkout = ({ onClose, onSuccess, onCheckout }) => {
           </div>
 
           {/* Conditional Fields based on Order Type */}
-          {orderContext.type === 'dine_in' && (
+          {orderContext.type === 'dine in' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

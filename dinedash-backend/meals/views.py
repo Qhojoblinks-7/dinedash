@@ -6,13 +6,9 @@ class IsStaffOrReadOnly(permissions.BasePermission):
     """
     Only staff users can create/update/delete.
     Everyone else can read (GET, HEAD, OPTIONS).
-    For development, allow POST without auth.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
-            return True
-        # Temporarily allow POST for development
-        if request.method == 'POST':
             return True
         return request.user and request.user.is_staff
 

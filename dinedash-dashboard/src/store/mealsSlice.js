@@ -1,7 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'https://dinedash-2-lh2q.onrender.com/api/meals/';
+/**
+ * Environment-based URL resolution with proper fallback logic
+ */
+const getApiBaseUrl = () => {
+  // Use environment variable for production, fallback to localhost for development
+  return import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/meals/` : 'http://localhost:8000/api/meals/';
+};
+
+const API_URL = getApiBaseUrl();
 
 export const fetchMeals = createAsyncThunk('meals/fetchMeals', async (_, thunkAPI) => {
   try {
@@ -20,6 +28,15 @@ export const createMeal = createAsyncThunk('meals/createMeal', async (mealData, 
       },
     });
     return response.data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+  }
+});
+
+export const deleteMeal = createAsyncThunk('meals/deleteMeal', async (mealId, thunkAPI) => {
+  try {
+    await axios.delete(`${API_URL}${mealId}/`);
+    return mealId;
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
   }
@@ -63,6 +80,18 @@ const mealsSlice = createSlice({
         state.meals.push(action.payload);
       })
       .addCase(createMeal.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteMeal.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteMeal.fulfilled, (state, action) => {
+        state.loading = false;
+        state.meals = state.meals.filter(meal => meal.id !== action.payload);
+      })
+      .addCase(deleteMeal.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

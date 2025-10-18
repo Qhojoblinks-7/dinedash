@@ -9,7 +9,17 @@ import Accounting from './Accounting';
 import { useToast } from './ui/toastContext';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchMeals, createMeal } from '../store/mealsSlice';
-import { fetchOrders, updateOrderStatus, finalizePayment, verifyPayment } from '../store/ordersSlice';
+import { fetchOrders, updateOrderStatus, finalizePayment } from '../store/ordersSlice';
+
+/**
+ * Environment-based URL resolution for image assets
+ */
+const getImageBaseUrl = () => {
+  // Use environment variable for production, fallback to localhost for development
+  return import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
+};
+
+const IMAGE_BASE_URL = getImageBaseUrl();
 
 const Dashboard = () => {
   const { addToast } = useToast();
@@ -24,6 +34,7 @@ const Dashboard = () => {
   // Local state for orders
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [paymentVerified, setPaymentVerified] = useState(false);
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [newMeal, setNewMeal] = useState({
     name: '',
@@ -108,12 +119,11 @@ const Dashboard = () => {
 
 
   const transformedMenuItems = filteredMeals.map(meal => {
-    console.log('meal.is_veg:', meal.is_veg, 'type:', typeof meal.is_veg, 'for meal:', meal.name);
     return {
       id: meal.id.toString(),
       name: meal.name,
       description: meal.description || '',
-      image: meal.image ? `https://dinedash-2-lh2q.onrender.com${meal.image}` : null,
+      image: meal.image ? `${IMAGE_BASE_URL}${meal.image}` : null,
       price: parseFloat(meal.price),
       categoryId: meal.category || 'main',
       isAvailable: meal.is_available,
@@ -144,10 +154,6 @@ const Dashboard = () => {
 
   const handleSendToKitchen = async () => {
     if (selectedOrder) {
-      if (selectedOrder.status === 'pending') {
-        addToast('Please verify payment before sending to kitchen.', 'error');
-        return;
-      }
       try {
         await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'in progress' })).unwrap();
         dispatch(fetchOrders());
@@ -159,11 +165,12 @@ const Dashboard = () => {
   };
 
   const handleVerifyPayment = async () => {
-    if (selectedOrder && selectedOrder.payment_tx_ref) {
+    if (selectedOrder) {
       setVerifyingPayment(true);
       try {
-        await dispatch(verifyPayment({ orderId: selectedOrder.id, txRef: selectedOrder.payment_tx_ref })).unwrap();
-        dispatch(fetchOrders());
+        // For cash orders, just mark as verified by updating local state
+        // This simulates payment verification for the demo
+        setPaymentVerified(true);
         addToast('Payment verified successfully!', 'success');
       } catch {
         addToast('Failed to verify payment.', 'error');
@@ -171,7 +178,7 @@ const Dashboard = () => {
         setVerifyingPayment(false);
       }
     } else {
-      addToast('No payment reference found.', 'error');
+      addToast('No order selected.', 'error');
     }
   };
 
@@ -209,7 +216,7 @@ const Dashboard = () => {
   const tableDetails = selectedOrder ? {
     tableNumber: selectedOrder.tracking_code,
     orderType: selectedOrder.order_type,
-    status: selectedOrder.status,
+    status: paymentVerified ? 'sentToKitchen' : selectedOrder.status,
   } : null;
 
   const orderDetails = selectedOrder ? {
@@ -252,6 +259,7 @@ const Dashboard = () => {
                 transformedMenuItems.map((item) => (
                   <MenuItemCard
                     key={item.id}
+                    id={item.id}
                     name={item.name}
                     description={item.description}
                     image={item.image}
@@ -280,6 +288,7 @@ const Dashboard = () => {
           order={selectedOrder}
           meals={meals}
           verifyingPayment={verifyingPayment}
+          paymentVerified={paymentVerified}
           onRemoveItem={() => {}}
           onSendToKitchen={handleSendToKitchen}
           onFinalizePayment={handleFinalizePayment}

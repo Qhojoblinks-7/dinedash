@@ -51,7 +51,7 @@ const CartDrawerBackend = ({
     // Prepare the API payload
     const apiPayload = {
       customer_name: customerName,
-      order_type: orderType === 'Dine in' ? 'dine_in' : 'take_out',
+      order_type: orderType === 'Dine in' ? 'dine in' : 'take_out',
       items: cartItems.map(item => ({
         meal: item.id,
         quantity: item.qty

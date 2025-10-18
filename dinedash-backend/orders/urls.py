@@ -18,18 +18,18 @@ urlpatterns = [
     # Create a new order
     path('create/', OrderCreateAPIView.as_view(), name='order-create'),
 
+    # Checkout endpoint (must be before tracking_code to avoid conflict)
+    path('checkout/', CheckoutAPIView.as_view(), name='checkout'),
+
     # Analytics endpoint (must be before tracking_code to avoid conflict)
     path('analytics/', AnalyticsAPIView.as_view(), name='analytics'),
 
-    # Retrieve a single order by tracking code (customers/guests)
-    path('<str:tracking_code>/', OrderRetrieveAPIView.as_view(), name='order-detail'),
-
-    # Staff retrieve by internal DB ID
+    # Staff retrieve by internal DB ID (must be before tracking_code to avoid conflict)
     path('staff/<int:pk>/', StaffOrderRetrieveAPIView.as_view(), name='staff-order-detail'),
 
-    # Update order status by internal ID
+    # Update order status by internal ID (must be before tracking_code to avoid conflict)
     path('<int:id>/status/', OrderStatusUpdateAPIView.as_view(), name='order-status-update'),
 
-    # Checkout endpoint
-    path('checkout/', CheckoutAPIView.as_view(), name='checkout'),
+    # Retrieve a single order by tracking code (customers/guests) - this must be last
+    path('<str:tracking_code>/', OrderRetrieveAPIView.as_view(), name='order-detail'),
 ]

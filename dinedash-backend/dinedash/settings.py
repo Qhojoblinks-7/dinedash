@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-1t79_w17n6n6jb(gvo-gjl4#fk45k#9r!gg%9k#_$)eavkbx*k')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
-ALLOWED_HOSTS = ['dinedash-2-lh2q.onrender.com', 'localhost', '127.0.0.1'] + (os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else [])
+ALLOWED_HOSTS = ['dinedash-2-lh2q.onrender.com', 'localhost', '127.0.0.1', 'localhost:8000'] + (os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else [])
 
 # Applications
 INSTALLED_APPS = [
@@ -150,14 +150,14 @@ if DEBUG:
     CORS_EXPOSE_HEADERS = ["Content-Type", "Authorization"]
 else:
     # Production-safe origins
-    CORS_ALLOWED_ORIGINS = ['https://dinedash-w5bz.vercel.app', 'https://dinedash-w5bz-59tifljix-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-w5bz-fxsrndbwh-qhojoblinks-7s-projects.vercel.app','https://dinedash-yz8v.vercel.app','https://dinedash-yw4z-git-main-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z-e592jwuzz-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z.vercel.app','https://dinedash-yz8v-ltmdgkpb5-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-yw4z-kj66zshlm-qhojoblinks-7s-projects.vercel.app'] + (os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else [])
+    CORS_ALLOWED_ORIGINS = ['https://dinedash-w5bz.vercel.app', 'https://dinedash-w5bz-59tifljix-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-w5bz-fxsrndbwh-qhojoblinks-7s-projects.vercel.app','https://dinedash-yz8v.vercel.app','https://dinedash-yw4z-git-main-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z-e592jwuzz-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z.vercel.app','https://dinedash-yz8v-ltmdgkpb5-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-yw4z-kj66zshlm-qhojoblinks-7s-projects.vercel.app','http://localhost:5173','http://localhost:5174','http://localhost:5175','http://localhost:5176', 'http://localhost:8000'] + (os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else [])
 
 # Security settings for production
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_SSL_REDIRECT = True
+    # SECURE_SSL_REDIRECT = True  # Disabled for local development
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000  # 1 year

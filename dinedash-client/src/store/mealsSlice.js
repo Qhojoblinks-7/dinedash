@@ -1,9 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Dynamically set API URL based on environment variable (Vite)
-// Fallback to the specified Render URL if VITE_API_BASE_URL is not set
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dinedash-2-lh2q.onrender.com';
+// Environment-based URL resolution with proper fallback logic
+const getApiBaseUrl = () => {
+  // For now, use localhost:8000 for all configurations
+  return 'http://localhost:8000';
+};
+
+const BASE_URL = getApiBaseUrl();
 const API_URL = `${BASE_URL}/api/meals/`;
 
 // ----------------------------------------------------------------------

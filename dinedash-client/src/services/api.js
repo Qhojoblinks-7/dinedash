@@ -1,4 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dinedash-2-lh2q.onrender.com/api';
+/**
+ * API Service for DineDash Client
+ * Provides centralized HTTP client functionality with environment-aware URL configuration
+ */
+
+// Environment-based URL resolution with proper fallback logic
+const getApiBaseUrl = () => {
+  // Use environment variable for production, fallback to localhost for development
+  return import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const makeRequest = async (url, options = {}) => {
   const response = await fetch(url, {

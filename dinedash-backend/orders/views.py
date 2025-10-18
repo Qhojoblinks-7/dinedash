@@ -1,6 +1,8 @@
 from django.db import transaction
 import logging
-from rest_framework import status, permissions, generics
+import json
+from decimal import Decimal
+from rest_framework import status, permissions, generics, parsers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import uuid
@@ -21,19 +23,44 @@ logger = logging.getLogger(__name__)
 class CheckoutAPIView(APIView):
     """Handle checkout process."""
     permission_classes = [permissions.AllowAny]
-
-    def get_authenticators(self):
-        return []
+    parser_classes = [parsers.JSONParser]  # Explicitly set JSON parser
 
     def post(self, request, *args, **kwargs):
-        order_data = request.data.get('order', {})
-        payment_data = request.data.get('payment', {})
+        # Parse JSON manually if request.data is empty
+        if not request.data and request.body:
+            try:
+                parsed_data = json.loads(request.body.decode('utf-8'))
+                order_data = parsed_data.get('order', {})
+                payment_data = parsed_data.get('payment', {})
+            except json.JSONDecodeError:
+                logger.error("Invalid JSON format in request body")
+                return Response(
+                    {"error": "Invalid JSON format"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            order_data = request.data.get('order', {})
+            payment_data = request.data.get('payment', {})
+
+        # Log incoming data for debugging
+        logger.info(f"Processing checkout request - Order data keys: {list(order_data.keys()) if order_data else 'None'}")
+        logger.info(f"Processing checkout request - Payment data keys: {list(payment_data.keys()) if payment_data else 'None'}")
 
         order_serializer = OrderCreateSerializer(data=order_data)
-        order_serializer.is_valid(raise_exception=True)
+        if not order_serializer.is_valid():
+            logger.warning(f"Order validation failed: {order_serializer.errors}")
+            return Response(
+                {"error": "Order validation failed", "details": order_serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         payment_serializer = CheckoutPaymentSerializer(data=payment_data)
-        payment_serializer.is_valid(raise_exception=True)
+        if not payment_serializer.is_valid():
+            logger.warning(f"Payment validation failed: {payment_serializer.errors}")
+            return Response(
+                {"error": "Payment validation failed", "details": payment_serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         payment_validated_data = payment_serializer.validated_data
 
         payment = None
@@ -41,39 +68,38 @@ class CheckoutAPIView(APIView):
         try:
             with transaction.atomic():
                 order = order_serializer.save()
-                final_amount = order.total_amount + order.delivery_fee
+                final_amount = Decimal(order.total_amount) + Decimal(order.delivery_fee)
 
                 payment_method = payment_validated_data.get('method', 'cash')
                 initial_status = (
-                    Payment.STATUS_COMPLETED
-                    if payment_method == Payment.METHOD_CASH
-                    else Payment.STATUS_PENDING
+                    'completed'
+                    if payment_method == 'cash'
+                    else 'pending'
                 )
 
                 payment = Payment.objects.create(
                     order=order,
                     amount=final_amount,
-                    method=payment_method,
                     status=initial_status,
                     **payment_validated_data,
                 )
 
-                if payment.status == Payment.STATUS_COMPLETED:
-                    order.status = Order.STATUS_IN_PROGRESS
+                if payment.status == 'completed':
+                    order.status = 'pending'
                     order.save()
 
-                if payment_method != Payment.METHOD_CASH:
+                if payment_method != 'cash':
                     tx_ref = f"MOCK-PAY-{order.id}-{uuid.uuid4().hex[:6]}"
                     payment.transaction_ref = tx_ref
 
                     if "fail" not in tx_ref.lower():
-                        payment.status = Payment.STATUS_PENDING
+                        payment.status = 'pending'
                     else:
-                        payment.status = Payment.STATUS_FAILED
+                        payment.status = 'failed'
 
                     payment.save()
 
-                    if payment.status == Payment.STATUS_PENDING:
+                    if payment.status == 'pending':
                         mock_link = (
                             f"/api/payments/mock-verify/?tx_ref={payment.transaction_ref}"
                             f"&order_id={order.id}&status=successful"
@@ -89,9 +115,9 @@ class CheckoutAPIView(APIView):
                         )
 
         except Exception as e:
-            logger.exception("Checkout error")
+            logger.error(f"Checkout failed: {str(e)}")
             return Response(
-                {"error": f"Checkout failed: {e}"},
+                {"error": "Checkout failed. Please try again."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -123,9 +149,9 @@ class OrderCreateAPIView(APIView):
                 order = serializer.save()
                 return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            logger.exception("Order creation error")
+            logger.error(f"Order creation failed: {str(e)}")
             return Response(
-                {"error": f"Order creation failed: {e}"},
+                {"error": "Order creation failed. Please try again."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

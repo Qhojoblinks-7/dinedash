@@ -15,7 +15,7 @@ const MealCard = ({
   price,
   image,
   is_veg: isVeg = false,
-  available = true,
+  is_available: available = true,
   readyInMinutes = null,
 }) => {
   const { addToast } = useToast();

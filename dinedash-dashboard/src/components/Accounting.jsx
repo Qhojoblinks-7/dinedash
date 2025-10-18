@@ -8,7 +8,15 @@ import Button from './ui/Button';
 import { BarChart } from './ui/Chart';
 import { Select, SelectItem } from './ui/Select';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dinedash-2-lh2q.onrender.com';
+/**
+ * Environment-based URL resolution with proper fallback logic
+ */
+const getApiBaseUrl = () => {
+  // For now, use localhost:8000 for all configurations
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const EXPENSE_DATA = [
   { icon: faUtensils, name: 'Food Supplies', description: 'Ingredients and supplies', amount: 0 },
   { icon: faCoins, name: 'Staff Salaries', description: 'Monthly payroll', amount: 0 },

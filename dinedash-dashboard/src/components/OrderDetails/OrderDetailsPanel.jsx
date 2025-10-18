@@ -5,7 +5,7 @@ import OrderedItem from './OrderedItem';
 import PriceSummary from './PriceSummary';
 import PaymentActions from './PaymentActions';
 
-const OrderDetailsPanel = ({ isOpen, tableDetails, orderDetails, order, meals, verifyingPayment, onRemoveItem, onSendToKitchen, onFinalizePayment, onVerifyPayment, onClose }) => {
+const OrderDetailsPanel = ({ isOpen, tableDetails, orderDetails, order, meals, verifyingPayment, paymentVerified, onRemoveItem, onSendToKitchen, onFinalizePayment, onVerifyPayment, onClose }) => {
   const { items, subtotal, tax, totalAmount, paymentMethod } = orderDetails;
 
   return (
@@ -32,6 +32,7 @@ const OrderDetailsPanel = ({ isOpen, tableDetails, orderDetails, order, meals, v
         <PaymentActions
           order={order}
           verifyingPayment={verifyingPayment}
+          paymentVerified={paymentVerified}
           onSendToKitchen={onSendToKitchen}
           onFinalizePayment={onFinalizePayment}
           onVerifyPayment={onVerifyPayment}

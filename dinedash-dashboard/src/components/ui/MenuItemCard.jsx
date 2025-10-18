@@ -1,7 +1,10 @@
 import React from 'react';
-import { Leaf, Beef } from 'lucide-react';
+import { Leaf, Beef, Trash2 } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { deleteMeal } from '../../store/mealsSlice';
 
 const MenuItemCard = ({
+  id,
   name,
   image,
   price,
@@ -10,7 +13,18 @@ const MenuItemCard = ({
   isAvailable = true,
   quantity = 0
 }) => {
-  console.log('MenuItemCard', name, 'quantity:', quantity, 'isVeg:', isVeg, 'type:', typeof isVeg);
+  const dispatch = useDispatch();
+
+  const handleDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+      try {
+        await dispatch(deleteMeal(id)).unwrap();
+      } catch (error) {
+        console.error('Failed to delete meal:', error);
+      }
+    }
+  };
+
   return (
     <div className={`relative w-full max-w-xs sm:max-w-none rounded-xl shadow-lg bg-white overflow-hidden ${!isAvailable ? 'opacity-50 grayscale' : ''}`}>
       {/* Product Image */}
@@ -21,6 +35,15 @@ const MenuItemCard = ({
           className="w-full h-full object-cover rounded-t-xl"
         />
       </div>
+
+      {/* Delete Button */}
+      <button
+        onClick={handleDelete}
+        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors z-20"
+        title="Delete meal"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
 
       {/* Product Details */}
       <div className="p-4 flex flex-col items-start">

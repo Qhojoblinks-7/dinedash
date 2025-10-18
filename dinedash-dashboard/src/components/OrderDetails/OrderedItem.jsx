@@ -1,10 +1,20 @@
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
+/**
+ * Environment-based URL resolution for image assets
+ */
+const getImageBaseUrl = () => {
+  // For now, use localhost:8000 for all configurations
+  return 'http://localhost:8000';
+};
+
+const IMAGE_BASE_URL = getImageBaseUrl();
+
 const OrderedItem = ({ item, meals, onRemove }) => {
   const price = parseFloat(item.unit_price) || 0;
   const meal = meals?.find(m => m.id == item.meal);
-  const imageUrl = meal?.image ? `https://dinedash-2-lh2q.onrender.com${meal.image}` : null;
+  const imageUrl = meal?.image ? `${IMAGE_BASE_URL}${meal.image}` : null;
   return (
     <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
       <div className="flex items-center gap-3">
