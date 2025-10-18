@@ -24,18 +24,26 @@ export const fetchMeals = createAsyncThunk('meals/fetchMeals', async (_, thunkAP
 export const createMeal = createAsyncThunk('meals/createMeal', async (mealData, thunkAPI) => {
   try {
     console.log('Creating meal with data:', mealData);
-    const formData = new FormData();
 
-    // Append all fields to FormData
-    Object.keys(mealData).forEach(key => {
-      if (mealData[key] !== null && mealData[key] !== undefined) {
-        formData.append(key, mealData[key]);
-      }
-    });
+    // Check if mealData is already a FormData object
+    let formData;
+    if (mealData instanceof FormData) {
+      formData = mealData;
+      console.log('Using provided FormData directly');
+    } else {
+      console.log('Creating new FormData from object');
+      formData = new FormData();
+      // Append all fields to FormData
+      Object.keys(mealData).forEach(key => {
+        if (mealData[key] !== null && mealData[key] !== undefined) {
+          formData.append(key, mealData[key]);
+        }
+      });
+    }
 
     console.log('FormData contents:');
     for (let [key, value] of formData.entries()) {
-      console.log(key, value);
+      console.log(key, ':', value);
     }
 
     const response = await axios.post(API_URL, formData, {

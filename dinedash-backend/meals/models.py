@@ -41,6 +41,13 @@ class Meal(models.Model):
 
     class Meta:
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['category']),
+            models.Index(fields=['is_available']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['is_veg']),
+        ]
 
     def __str__(self):
         return self.name

@@ -60,6 +60,13 @@ class Order(models.Model):
         ordering = ['-created_at']
         verbose_name = "Order"
         verbose_name_plural = "Orders"
+        indexes = [
+            models.Index(fields=['tracking_code']),
+            models.Index(fields=['status']),
+            models.Index(fields=['order_type']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['user']),
+        ]
 
     def save(self, *args, **kwargs):
         # Generate tracking code if not already set

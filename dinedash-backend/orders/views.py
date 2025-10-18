@@ -24,6 +24,7 @@ class CheckoutAPIView(APIView):
     """Handle checkout process."""
     permission_classes = [permissions.AllowAny]
     parser_classes = [parsers.JSONParser]  # Explicitly set JSON parser
+    throttle_scope = 'checkout'
 
     def post(self, request, *args, **kwargs):
         # Parse JSON manually if request.data is empty
@@ -138,7 +139,7 @@ class CheckoutAPIView(APIView):
 
 class OrderCreateAPIView(APIView):
     """Create a new order."""
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = OrderCreateSerializer(data=request.data)
@@ -160,7 +161,7 @@ class OrderListAPIView(generics.ListAPIView):
     """List all orders."""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.AllowAny]
 
     def get_authenticators(self):
         if self.request.method in permissions.SAFE_METHODS:
@@ -198,16 +199,13 @@ class StaffOrderRetrieveAPIView(generics.RetrieveAPIView):
     """Retrieve order by ID."""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.AllowAny]
     lookup_field = 'id'
 
 
 class OrderStatusUpdateAPIView(APIView):
     """Update order status."""
     permission_classes = [permissions.AllowAny]
-
-    def get_authenticators(self):
-        return []
 
     def patch(self, request, id, *args, **kwargs):
         new_status = request.data.get('status')

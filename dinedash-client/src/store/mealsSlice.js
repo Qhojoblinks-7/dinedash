@@ -3,8 +3,8 @@ import axios from 'axios';
 
 // Environment-based URL resolution with proper fallback logic
 const getApiBaseUrl = () => {
-  // For now, use localhost:8000 for all configurations
-  return 'http://localhost:8000';
+  // Use environment variable if available, fallback to localhost for development
+  return import.meta.env.VITE_API_URL || 'http://localhost:8000';
 };
 
 const BASE_URL = getApiBaseUrl();

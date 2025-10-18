@@ -146,24 +146,34 @@ render env list --service dinedash-backend
 
 ## Environment Variables Reference
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| DEBUG | Django debug mode | False |
-| SECRET_KEY | Django secret key | random-string |
-| ALLOWED_HOSTS | Render app URL | your-app.onrender.com |
-| DATABASE_URL | Render PostgreSQL | postgresql://... |
-| CORS_ALLOWED_ORIGINS | Frontend URLs | https://client.onrender.com |
-| FLUTTERWAVE_PUBLIC_KEY | Payment integration | fw-pub-... |
-| FLUTTERWAVE_SECRET_KEY | Payment integration | fw-sec-... |
+| Variable | Description | Example | Required |
+|----------|-------------|---------|----------|
+| DEBUG | Django debug mode | False | Yes |
+| SECRET_KEY | Django secret key | random-string | Yes |
+| ALLOWED_HOSTS | Render app URL | your-app.onrender.com | Yes |
+| DATABASE_URL | Render PostgreSQL | postgresql://... | Yes |
+| CORS_ALLOWED_ORIGINS | Frontend URLs | https://client.onrender.com | Yes |
+| FLUTTERWAVE_PUBLIC_KEY | Payment integration | fw-pub-... | No |
+| FLUTTERWAVE_SECRET_KEY | Payment integration | fw-sec-... | No |
+| DATA_UPLOAD_MAX_MEMORY_SIZE | Max upload size | 10485760 | No |
+| FILE_UPLOAD_MAX_MEMORY_SIZE | Max file size | 10485760 | No |
+| RENDER_EXTERNAL_URL | Render app URL | https://app.onrender.com | Auto |
+| VERCEL_URL | Vercel deployment URL | app.vercel.app | Auto |
 
 ## Security Checklist
 
 - [ ] DEBUG=False in production
-- [ ] SECRET_KEY is secure and unique
+- [ ] SECRET_KEY is secure and unique (use Django's `get_random_secret_key()`)
 - [ ] ALLOWED_HOSTS configured correctly
 - [ ] Database credentials secured
 - [ ] CORS properly configured
+- [ ] Rate limiting enabled (configured in settings)
+- [ ] HTTPS enabled in production
 - [ ] Regular dependency updates
+- [ ] File upload validation in place
+- [ ] Input sanitization implemented
+- [ ] Error logging configured
+- [ ] Database indexes optimized
 
 ## Support
 
