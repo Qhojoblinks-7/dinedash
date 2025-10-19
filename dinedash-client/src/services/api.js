@@ -23,23 +23,23 @@ const makeRequest = async (url, options = {}) => {
 };
 
 export const apiService = {
-  createOrder: (orderData) => makeRequest(`${API_BASE_URL}/orders/create/`, {
+  createOrder: (orderData) => makeRequest(`${API_BASE_URL}/api/orders/create/`, {
     method: 'POST',
     body: JSON.stringify(orderData),
   }),
 
-  getMeals: () => makeRequest(`${API_BASE_URL}/meals/`),
+  getMeals: () => makeRequest(`${API_BASE_URL}/api/meals/`),
 
-  getOrders: () => makeRequest(`${API_BASE_URL}/orders/`),
+  getOrders: () => makeRequest(`${API_BASE_URL}/api/orders/`),
 
-  getOrder: (orderId) => makeRequest(`${API_BASE_URL}/orders/${orderId}/`),
+  getOrder: (orderId) => makeRequest(`${API_BASE_URL}/api/orders/${orderId}/`),
 
-  initiatePayment: (orderId, paymentMethod) => makeRequest(`${API_BASE_URL}/payments/mock-pay/`, {
+  initiatePayment: (orderId, paymentMethod) => makeRequest(`${API_BASE_URL}/api/payments/mock-pay/`, {
     method: 'POST',
     body: JSON.stringify({ order_id: orderId, payment_method: paymentMethod }),
   }),
 
-  checkout: (checkoutData) => makeRequest(`${API_BASE_URL}/orders/checkout/`, {
+  checkout: (checkoutData) => makeRequest(`${API_BASE_URL}/api/orders/checkout/`, {
     method: 'POST',
     body: JSON.stringify(checkoutData),
   }),

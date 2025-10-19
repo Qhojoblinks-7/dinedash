@@ -6,12 +6,12 @@ import axios from 'axios';
  */
 const getApiBaseUrl = () => {
   // Use environment variable for production, fallback to localhost for development
-  return import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+  return import.meta.env.VITE_API_URL || 'http://localhost:8000';
 };
 
 const BASE_URL = getApiBaseUrl();
-const API_URL = BASE_URL.endsWith('/') ? `${BASE_URL}orders/` : `${BASE_URL}/orders/`;
-const PAYMENT_API_URL = BASE_URL.endsWith('/') ? `${BASE_URL}payments/` : `${BASE_URL}/payments/`;
+const API_URL = BASE_URL.endsWith('/') ? `${BASE_URL}api/orders/` : `${BASE_URL}/api/orders/`;
+const PAYMENT_API_URL = BASE_URL.endsWith('/') ? `${BASE_URL}api/payments/` : `${BASE_URL}/api/payments/`;
 
 export const fetchOrders = createAsyncThunk('orders/fetchOrders', async (_, thunkAPI) => {
     try {
@@ -92,7 +92,7 @@ const ordersSlice = createSlice({
             })
             .addCase(fetchOrders.fulfilled, (state, action) => {
                 state.loading = false;
-                state.orders = Array.isArray(action.payload) ? action.payload : [];
+                state.orders = action.payload.results || (Array.isArray(action.payload) ? action.payload : []);
             })
             .addCase(fetchOrders.rejected, (state, action) => {
                 state.loading = false;
