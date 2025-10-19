@@ -10,18 +10,12 @@ import { useToast } from './ui/toastContext';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchMeals, createMeal } from '../store/mealsSlice';
 import { fetchOrders, updateOrderStatus, finalizePayment } from '../store/ordersSlice';
-// NEW IMPORT: EditMealModal for updating menu items
-import { EditMealModal } from './EditMealModal'; // Assumed component path
+import { EditMealModal } from './EditMealModal';
 
-/**
- * Environment-based URL resolution for image assets
+/* * NOTE: The getImageBaseUrl function and IMAGE_BASE_URL constant have been removed.
+ * The meal.image URL is now used directly, as it should be an absolute URL 
+ * returned by the Django backend.
  */
-const getImageBaseUrl = () => {
-  // Use environment variable for production, fallback to localhost for development
-  return import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
-};
-
-const IMAGE_BASE_URL = getImageBaseUrl();
 
 const Dashboard = () => {
   const { addToast } = useToast();
@@ -37,12 +31,10 @@ const Dashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   
-  // REMOVED: [paymentVerified, setPaymentVerified] - Rely on server status
-  
   // NEW STATE for Meal Management
   const [showAddMeal, setShowAddMeal] = useState(false);
-  const [isCreatingMeal, setIsCreatingMeal] = useState(false); // New loading state for Add Modal
-  const [mealToEdit, setMealToEdit] = useState(null); // New state for Edit Modal
+  const [isCreatingMeal, setIsCreatingMeal] = useState(false);
+  const [mealToEdit, setMealToEdit] = useState(null);
   
   const [newMeal, setNewMeal] = useState({
     name: '',
@@ -73,12 +65,10 @@ const Dashboard = () => {
     setShowAddMeal(true);
   };
   
-  // NEW HANDLER: Open Edit Modal
   const handleEditMealClick = (meal) => {
     setMealToEdit(meal);
   };
   
-  // NEW HANDLER: Close Edit Modal
   const handleCloseEditModal = () => {
     setMealToEdit(null);
   };
@@ -138,7 +128,7 @@ const Dashboard = () => {
   const filteredMeals = menuItemsArray.filter(meal => {
     const matchesCategory = selectedCategory === 'all' || meal.category === selectedCategory;
     const matchesSearch = meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          meal.description?.toLowerCase().includes(searchQuery.toLowerCase());
+                            meal.description?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -148,9 +138,10 @@ const Dashboard = () => {
       id: meal.id.toString(),
       name: meal.name,
       description: meal.description || '',
-      image: meal.image ? `${IMAGE_BASE_URL}${meal.image}` : null,
+      // 👇 THE FIX: Use meal.image URL directly without prepending the domain
+      image: meal.image || null, 
       price: parseFloat(meal.price),
-      category: meal.category || 'main_course', // Use 'category' for consistency
+      category: meal.category || 'main_course',
       isAvailable: meal.is_available,
       isVeg: meal.is_veg,
       orderedQuantity: orderedQuantities[meal.id.toString()] || 0,
@@ -168,17 +159,13 @@ const Dashboard = () => {
   const handleFinalizePayment = async (paymentMethod) => {
     if (selectedOrder) {
       try {
-        // Assume this thunk updates the status to 'paid' or similar on the server
         await dispatch(finalizePayment({ orderId: selectedOrder.id, paymentMethod, amount: selectedOrder.totalAmount })).unwrap();
         
-        // Update status to completed after payment is finalized (or let the payment finalize hook handle status update)
-        // For simplicity, we dispatch the status update here:
         await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'completed' })).unwrap(); 
         
-        // Re-fetch orders to update the TableStatus view
         dispatch(fetchOrders());
         addToast('Payment finalized successfully!', 'success');
-        setSelectedOrder(null); // Close panel
+        setSelectedOrder(null); 
       } catch (error) {
         addToast(error || 'Failed to finalize payment.', 'error');
       }
@@ -201,18 +188,13 @@ const Dashboard = () => {
     if (selectedOrder) {
       setVerifyingPayment(true);
       try {
-        // ACTION: This should dispatch a thunk to update the order status to 'paid' or 'verified' 
-        // on the server, rather than just updating local state.
-        
-        // For now, we simulate success and update the status to 'in progress' assuming 
-        // verification means it's ready for the kitchen.
         await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'in progress' })).unwrap();
         dispatch(fetchOrders());
         
         addToast('Payment verified successfully and sent to kitchen!', 'success');
-        setSelectedOrder(null); // Close panel
+        setSelectedOrder(null); 
       } catch (e) {
-         addToast('Failed to verify payment.', 'error');
+          addToast('Failed to verify payment.', 'error');
       } finally {
         setVerifyingPayment(false);
       }
@@ -222,7 +204,7 @@ const Dashboard = () => {
   };
 
   const handleAddMeal = async () => {
-    setIsCreatingMeal(true); // START loading state for modal
+    setIsCreatingMeal(true); 
     const formData = new FormData();
     formData.append('name', newMeal.name);
     formData.append('description', newMeal.description);
@@ -235,7 +217,6 @@ const Dashboard = () => {
       formData.append('image', newMeal.image);
     }
     
-    // Add validation check before dispatching
     if (!newMeal.name || !newMeal.price || !newMeal.prep_time) {
         addToast('Please fill in Name, Price, and Prep Time.', 'error');
         setIsCreatingMeal(false);
@@ -269,7 +250,7 @@ const Dashboard = () => {
         addToast(`Failed to add meal: ${JSON.stringify(error)}`, 'error');
       }
     } finally {
-        setIsCreatingMeal(false); // END loading state for modal
+        setIsCreatingMeal(false); 
     }
   };
 
@@ -318,22 +299,21 @@ const Dashboard = () => {
                 </div>
               ) : (
                 transformedMenuItems.map((item) => {
-                    // Find the original meal object to pass to the edit handler
-                    const originalMeal = menuItemsArray.find(m => m.id.toString() === item.id);
-                    return (
-                        <MenuItemCard
-                            key={item.id}
-                            id={item.id}
-                            name={item.name}
-                            description={item.description}
-                            image={item.image}
-                            price={item.price}
-                            isVeg={item.isVeg}
-                            isAvailable={item.isAvailable}
-                            quantity={item.orderedQuantity}
-                            onClick={() => handleEditMealClick(originalMeal)} // NEW: Click to edit
-                        />
-                    );
+                  const originalMeal = menuItemsArray.find(m => m.id.toString() === item.id);
+                  return (
+                      <MenuItemCard
+                          key={item.id}
+                          id={item.id}
+                          name={item.name}
+                          description={item.description}
+                          image={item.image}
+                          price={item.price}
+                          isVeg={item.isVeg}
+                          isAvailable={item.isAvailable}
+                          quantity={item.orderedQuantity}
+                          onClick={() => handleEditMealClick(originalMeal)}
+                      />
+                  );
                 })
               )}
             </div>
@@ -354,7 +334,6 @@ const Dashboard = () => {
           order={selectedOrder}
           meals={meals}
           verifyingPayment={verifyingPayment}
-          // REMOVED: paymentVerified prop
           onRemoveItem={() => {}}
           onSendToKitchen={handleSendToKitchen}
           onFinalizePayment={handleFinalizePayment}
@@ -369,7 +348,6 @@ const Dashboard = () => {
           isOpen={!!mealToEdit}
           meal={mealToEdit}
           onClose={handleCloseEditModal}
-          // The modal will handle its own dispatch of updateMeal
         />
       )}
 
@@ -447,7 +425,7 @@ const Dashboard = () => {
               <button 
                 onClick={handleAddMeal} 
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-                disabled={isCreatingMeal} // Use new loading state
+                disabled={isCreatingMeal}
               >
                 {isCreatingMeal ? 'Adding...' : 'Add Meal'}
               </button>
