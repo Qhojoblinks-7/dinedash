@@ -13,7 +13,7 @@ from .serializers import PaymentCreateSerializer, PaymentSerializer
 
 class PaymentListAPIView(generics.ListAPIView):
     """
-    API endpoint for staff/admin to view a list of all payment records for auditing.
+    API endpoint that lets staff and admins see all payment records for review and auditing purposes.
     """
     queryset = Payment.objects.all().select_related('order').order_by('-created_at')
     serializer_class = PaymentSerializer 
@@ -24,10 +24,10 @@ class PaymentListAPIView(generics.ListAPIView):
 
 class MockPaymentAPIView(generics.GenericAPIView):
     """
-    Simulates the initiation of an external payment gateway.
-    1. Validates order and amount.
-    2. Creates a PENDING Payment record.
-    3. Returns a redirect URL to the local MockVerifyAPIView.
+    Simulates how a real payment gateway would work for testing purposes.
+    1. Checks that the order and payment amount are valid.
+    2. Creates a payment record that's waiting to be processed.
+    3. Provides a link to complete the payment verification.
     """
     permission_classes = [AllowAny]
     serializer_class = PaymentCreateSerializer 
@@ -42,25 +42,25 @@ class MockPaymentAPIView(generics.GenericAPIView):
         amount = validated_data['amount']
         method = validated_data['payment_method']
         
-        # Security check: Prevent re-initiating a successful payment
+        # Security check: Make sure we don't try to pay for an order that's already been handled
         if order.status != Order.STATUS_PENDING:
-             return Response({"error": "Order is not in a pending state and cannot initiate payment."}, 
+             return Response({"error": "Order is not in a pending state and cannot initiate payment."},
                              status=status.HTTP_400_BAD_REQUEST)
         
-        # 2. Create PENDING Payment Record
+        # 2. Create a payment record that's waiting to be completed
         with transaction.atomic():
-            tx_ref = f"MOCK-{order.id}-{uuid.uuid4().hex[:6]}" 
-            
+            tx_ref = f"MOCK-{order.id}-{uuid.uuid4().hex[:6]}"
+
             payment = Payment.objects.create(
                 order=order,
                 amount=amount,
-                method=method, 
+                method=method,
                 status=Payment.STATUS_PENDING,
                 transaction_ref=tx_ref
             )
 
-        # 3. Return a local URL that simulates the gateway redirect
-        # We include order_id in the redirect for robustness
+        # 3. Provide a link that simulates where the customer would go to complete payment
+        # We include the order ID to make sure everything connects properly
         mock_redirect_url = f"/api/payments/mock-verify/?tx_ref={tx_ref}&order_id={order.id}&status=successful"
         
         return Response({
@@ -73,10 +73,10 @@ class MockPaymentAPIView(generics.GenericAPIView):
 
 class MockVerifyAPIView(generics.GenericAPIView):
     """
-    Simulates the verification process after a successful gateway payment.
-    1. Locates the PENDING payment.
-    2. Marks payment as COMPLETED.
-    3. Updates order status to IN_PROGRESS.
+    Simulates what happens when a payment gateway confirms a successful payment.
+    1. Finds the payment that's waiting to be verified.
+    2. Marks the payment as completed.
+    3. Updates the order status to show it's now being prepared.
     """
     permission_classes = [AllowAny] 
 
@@ -91,29 +91,29 @@ class MockVerifyAPIView(generics.GenericAPIView):
 
         try:
             with transaction.atomic():
-                # 1. Locate Payment Record (Using tx_ref and order_id)
+                # 1. Find the payment record using both the transaction reference and order ID
                 payment = Payment.objects.select_related('order').get(
                     transaction_ref=tx_ref,
-                    order_id=order_id # Better lookup ensures correctness
-                ) 
+                    order_id=order_id # Using both ensures we get the right payment
+                )
                 order = payment.order
-                
-                # Check for idempotency (prevent double processing)
+
+                # Make sure we don't process the same payment twice
                 if payment.status == Payment.STATUS_COMPLETED:
                      return Response({
                          "message": "Payment already verified successfully.",
                          "order_id": order.id
                      }, status=status.HTTP_200_OK)
 
-                # 2. Simulate Success Logic
+                # 2. Handle successful payment scenario
                 if mock_status.lower() == "successful":
-                    
-                    # Update Payment Status
+
+                    # Mark the payment as completed
                     payment.status = Payment.STATUS_COMPLETED
                     payment.transaction_id = f"MOCK-SUCCESS-{tx_ref}"
                     payment.save()
 
-                    # Update Order Status
+                    # Update the order to show it's now being prepared
                     order.status = Order.STATUS_IN_PROGRESS # Use the constant you defined
                     order.save()
 
@@ -122,12 +122,12 @@ class MockVerifyAPIView(generics.GenericAPIView):
                         "order": PaymentSerializer(payment).data # Return payment details
                     }, status=status.HTTP_200_OK)
 
-                # 3. Simulate Failure Logic
+                # 3. Handle failed payment scenario
                 else:
-                    payment.status = Payment.STATUS_FAILED 
+                    payment.status = Payment.STATUS_FAILED
                     payment.save()
-                    
-                    # Note: Order status remains PENDING/unchanged on payment failure
+
+                    # The order stays pending when payment fails, so customer can try again
                     return Response({
                         "error": "Mock verification failed.",
                         "tx_ref": tx_ref
@@ -145,8 +145,8 @@ class MockVerifyAPIView(generics.GenericAPIView):
 @permission_classes([IsAdminUser])
 def finalize_payment(request):
     """
-    API endpoint for staff/admin to finalize payment for an order.
-    Creates a completed payment record and updates order status.
+    API endpoint that allows staff and admins to mark an order's payment as completed.
+    This creates the payment record and updates the order status accordingly.
     """
     order_id = request.data.get('order_id')
     payment_method = request.data.get('payment_method')
@@ -160,17 +160,17 @@ def finalize_payment(request):
         with transaction.atomic():
             order = Order.objects.get(id=order_id)
 
-            # Check if order is in sentToKitchen status
+            # Make sure the order has been sent to the kitchen first
             if order.status != 'sentToKitchen':
                 return Response({"error": "Order must be sent to kitchen before payment can be finalized."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            # Check if payment already exists
+            # Double-check that payment hasn't already been completed
             if Payment.objects.filter(order=order, status=Payment.STATUS_COMPLETED).exists():
                 return Response({"error": "Payment already finalized for this order."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            # Create completed payment record
+            # Create a payment record showing the transaction is done
             tx_ref = f"STAFF-{order.id}-{uuid.uuid4().hex[:6]}"
             payment = Payment.objects.create(
                 order=order,
@@ -181,7 +181,7 @@ def finalize_payment(request):
                 transaction_id=f"STAFF-COMPLETE-{tx_ref}"
             )
 
-            # Update order status to completed
+            # Mark the order as fully completed
             order.status = 'completed'
             order.save()
 

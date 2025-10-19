@@ -3,20 +3,20 @@ from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     """
-    Serializer for the custom User model.
+    Handles converting user data between the database and API responses.
 
-    This serializer converts the User model instances into native Python datatypes,
-    which can then be rendered into JSON or other content types. It also handles
-    deserialization and validation when creating or updating user instances.
+    This takes user information from our database and turns it into a format that can be
+    sent over the internet as JSON. It also validates and processes data when creating
+    or updating user accounts.
 
-    Fields included:
-        - id: Primary key of the user
-        - username: Username of the user
-        - email: User's email address
-        - role: Role of the staff member (e.g., waiter, kitchen, admin)
+    Includes these user details:
+        - id: Unique identifier for each user
+        - username: The user's login name
+        - email: User's email address for notifications
+        - role: What job they do (like waiter, kitchen staff, or admin)
     """
     
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role']
-        read_only_fields = ['id']  # Prevents modification of the primary key
+        read_only_fields = ['id']  # The ID can't be changed once created

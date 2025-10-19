@@ -4,7 +4,7 @@ from orders.models import Order
 
 class PaymentSerializer(serializers.ModelSerializer):
     """
-    General read-only serializer for the Payment model.
+    Shows payment information in a format that's easy to send over the internet.
     """
     
     class Meta:
@@ -15,7 +15,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class PaymentCreateSerializer(serializers.Serializer):
     """
-    Serializer for validating incoming data before payment initiation.
+    Checks that all the payment information is correct before starting the payment process.
     """
     # Fields expected from the front-end
     order_id = serializers.IntegerField()
@@ -27,27 +27,27 @@ class PaymentCreateSerializer(serializers.Serializer):
     
     def validate_order_id(self, value):
         """
-        Ensure the order exists and is eligible for payment.
+        Make sure the order actually exists and can still be paid for.
         """
         try:
             order = Order.objects.get(id=value)
         except Order.DoesNotExist:
             raise serializers.ValidationError("Order does not exist.")
-        
+
 
         if order.status == 'completed' or getattr(order, 'is_paid', False):
             raise serializers.ValidationError("Order is already paid or completed.")
-        
-        # Attach the order object to the serializer instance for the view's use
+
+
+        # Keep the order object handy for the view to use later
         if not hasattr(self, '_order_cache'):
             self._order_cache = {}
         self._order_cache[value] = order
-        
+
         return value
-    
     def validate_amount(self, value):
         """
-        Ensure the payment amount is positive.
+        Make sure the payment amount is a positive number.
         """
         if value <= 0:
             raise serializers.ValidationError("Payment amount must be positive.")
@@ -55,13 +55,13 @@ class PaymentCreateSerializer(serializers.Serializer):
     
     def validate(self, data):
         """
-        Add the fetched order object to the validated data.
+        Add the order object we found earlier to the cleaned data.
         """
         order_id = data.get('order_id')
         if order_id in getattr(self, '_order_cache', {}):
             data['order'] = self._order_cache[order_id]
-        
-        # Optional: Check if amount matches order total if required
+
+        # Make sure the payment amount covers at least the order total
         if data.get('order') and data.get('amount') < data['order'].total_amount:
             raise serializers.ValidationError({"amount": "Payment amount is less than the order total."})
 
@@ -70,8 +70,8 @@ class PaymentCreateSerializer(serializers.Serializer):
 # Checkout Nested Serializer (for CheckoutAPIView)
 class CheckoutPaymentSerializer(serializers.Serializer):
     """
-    Validates payment details when nested within the CheckoutAPIView payload.
-    It focuses only on the method and required provider/contact details.
+    Checks payment information during the checkout process.
+    Handles the payment method and any extra details needed for that payment type.
     """
     # Fields that map directly to the Payment model
     method = serializers.ChoiceField(
@@ -89,13 +89,12 @@ class CheckoutPaymentSerializer(serializers.Serializer):
 
     def validate(self, data):
         """
-        Ensures method-specific fields are present (e.g., phone for MoMo).
+        Checks that all required information for the chosen payment method is provided.
         """
         method = data.get('method')
-        
-        # Example validation: Mobile Money needs a phone number
-        # Use getattr() for safe access to constants if they are not directly imported
+
+        # For mobile money payments, we need a phone number
         if method in ['momo'] and not data.get('phone'):
             raise serializers.ValidationError({"phone": "Phone number is required for Mobile Money payments."})
-        
+
         return data

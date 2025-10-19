@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 class CheckoutAPIView(APIView):
-    """Handle checkout process."""
+    """Manages the complete checkout process from order to payment."""
     permission_classes = [permissions.AllowAny]
-    parser_classes = [parsers.JSONParser]  # Explicitly set JSON parser
+    parser_classes = [parsers.JSONParser]  # We only accept JSON data
     throttle_scope = 'checkout'
 
     def post(self, request, *args, **kwargs):
-        # Parse JSON manually if request.data is empty
+        # Handle cases where the data might not be parsed automatically
         if not request.data and request.body:
             try:
                 parsed_data = json.loads(request.body.decode('utf-8'))
@@ -43,7 +43,7 @@ class CheckoutAPIView(APIView):
             order_data = request.data.get('order', {})
             payment_data = request.data.get('payment', {})
 
-        # Log incoming data for debugging
+        # Keep track of what data we're working with for troubleshooting
         logger.info(f"Processing checkout request - Order data keys: {list(order_data.keys()) if order_data else 'None'}")
         logger.info(f"Processing checkout request - Payment data keys: {list(payment_data.keys()) if payment_data else 'None'}")
 
@@ -68,16 +68,19 @@ class CheckoutAPIView(APIView):
 
         try:
             with transaction.atomic():
+                # Create the order first
                 order = order_serializer.save()
                 final_amount = Decimal(order.total_amount) + Decimal(order.delivery_fee)
 
                 payment_method = payment_validated_data.get('method', 'cash')
+                # Cash payments are completed immediately, others start as pending
                 initial_status = (
                     'completed'
                     if payment_method == 'cash'
                     else 'pending'
                 )
 
+                # Create the payment record
                 payment = Payment.objects.create(
                     order=order,
                     amount=final_amount,
@@ -93,6 +96,7 @@ class CheckoutAPIView(APIView):
                     tx_ref = f"MOCK-PAY-{order.id}-{uuid.uuid4().hex[:6]}"
                     payment.transaction_ref = tx_ref
 
+                    # Simulate some payments failing for testing
                     if "fail" not in tx_ref.lower():
                         payment.status = 'pending'
                     else:
@@ -138,7 +142,7 @@ class CheckoutAPIView(APIView):
 
 
 class OrderCreateAPIView(APIView):
-    """Create a new order."""
+    """Allows authenticated users to place new orders."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -158,7 +162,7 @@ class OrderCreateAPIView(APIView):
 
 
 class OrderListAPIView(generics.ListAPIView):
-    """List all orders."""
+    """Shows a list of all orders in the system."""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.AllowAny]
@@ -179,7 +183,7 @@ class OrderListAPIView(generics.ListAPIView):
 
 
 class OrderRetrieveAPIView(APIView):
-    """Retrieve order by tracking code."""
+    """Lets customers look up their orders using the tracking code."""
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, tracking_code, *args, **kwargs):
@@ -196,7 +200,7 @@ class OrderRetrieveAPIView(APIView):
 
 
 class StaffOrderRetrieveAPIView(generics.RetrieveAPIView):
-    """Retrieve order by ID."""
+    """Allows staff to look up specific orders using the internal ID."""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.AllowAny]
@@ -204,7 +208,7 @@ class StaffOrderRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class OrderStatusUpdateAPIView(APIView):
-    """Update order status."""
+    """Changes the status of an order (like from pending to in progress)."""
     permission_classes = [permissions.AllowAny]
 
     def patch(self, request, id, *args, **kwargs):
@@ -232,14 +236,14 @@ class OrderStatusUpdateAPIView(APIView):
 # Analytics API
 # ----------------------------------------------------------------------
 class AnalyticsAPIView(APIView):
-    """ Analytics data for dashboard. """
+    """ Provides business insights and statistics for the dashboard. """
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, *args, **kwargs):
-        # Get all orders (for demo purposes, using all instead of completed)
+        # Get all orders for analysis (including both completed and pending ones for demo)
         orders = Order.objects.all()
 
-        # Filter by date range if provided
+        # Allow filtering by date range for more targeted analytics
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
 
@@ -250,22 +254,20 @@ class AnalyticsAPIView(APIView):
 
         completed_orders = orders
 
-        # Total revenue
+        # Calculate overall business metrics
         total_revenue = sum(float(order.total_amount) for order in completed_orders)
 
-        # Total orders
         total_orders = completed_orders.count()
 
-        # Average order value
         avg_order_value = total_revenue / total_orders if total_orders > 0 else 0
 
-        # Today's revenue
+        # Get today's performance
         from django.utils import timezone
         today = timezone.now().date()
         today_orders = completed_orders.filter(created_at__date=today)
         today_revenue = sum(float(order.total_amount) for order in today_orders)
 
-        # Daily revenue for the selected period
+        # Build daily revenue chart data
         daily_revenue = []
         if start_date and end_date:
             start = timezone.datetime.fromisoformat(start_date).date()
@@ -281,7 +283,7 @@ class AnalyticsAPIView(APIView):
                 })
                 current_date += timezone.timedelta(days=1)
         else:
-            # Default to last 7 days if no date range specified
+            # Show the last 7 days by default
             for i in range(6, -1, -1):
                 date = today - timezone.timedelta(days=i)
                 day_orders = completed_orders.filter(created_at__date=date)
@@ -292,7 +294,7 @@ class AnalyticsAPIView(APIView):
                     'orders': day_orders.count()
                 })
 
-        # Payment method breakdown
+        # See which payment methods customers prefer
         payment_breakdown = {}
         for order in completed_orders:
             try:
@@ -302,7 +304,7 @@ class AnalyticsAPIView(APIView):
                 method = 'cash'
             payment_breakdown[method] = payment_breakdown.get(method, 0) + float(order.total_amount)
 
-        # Most profitable meals
+        # Find out which meals are the most popular
         from meals.models import Meal
         meal_revenue = {}
         for order in completed_orders:
@@ -322,7 +324,7 @@ class AnalyticsAPIView(APIView):
             except Meal.DoesNotExist:
                 continue
 
-        # Ordered quantities for pending orders
+        # Track how many of each meal are currently ordered but not yet fulfilled
         ordered_quantities = {}
         for order in completed_orders:
             if order.status == 'pending':

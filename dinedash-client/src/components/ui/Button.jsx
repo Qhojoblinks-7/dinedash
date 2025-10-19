@@ -6,16 +6,16 @@ const Button = ({
   fullWidth = false,
   disabled = false,
   leftIcon = null,
-  icon = null, // React node, e.g. <FontAwesomeIcon />
+  icon = null, // A React component like a FontAwesome icon
   className = '',
   onClick = () => {},
   ariaLabel,
-  // optional overrides
-  textColor = '', // e.g. 'text-[#0015AA]'
-  bgClass = '', // optional bg class to override variant bg
-  style = {}, // pass-through style
+  // These let you customize the button's appearance
+  textColor = '', // Custom text color like 'text-[#0015AA]'
+  bgClass = '', // Override the background style if needed
+  style = {}, // Additional inline styles
 }) => {
-  // base styles: 6px radius (rounded-sm gives 0.125rem = 2px; use custom)
+  // Basic button styling with rounded corners
   const base = 'inline-flex items-center justify-center gap-3 px-6 py-3 rounded-[6px] text-lg font-medium transform';
 
   const variants = {
@@ -34,7 +34,7 @@ const Button = ({
 
   return (
   <button aria-label={ariaLabel} onClick={onClick} disabled={disabled} className={classes} style={style}>
-      {/* icon prop takes precedence (React node), fallback to leftIcon element */}
+      {/* Use the main icon if provided, otherwise use the left icon */}
       {icon ? (
         <span className="inline-flex items-center justify-center w-8 h-8 text-xl text-white">{icon}</span>
       ) : (

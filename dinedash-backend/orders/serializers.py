@@ -9,22 +9,22 @@ from payments.models import Payment
 # Read and Display serializers
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    """ Read-only serializer for individual items.
-        Uses stored item_name or unit_price for historical accuracy. """
+    """ Shows details for individual items in an order.
+        Uses the saved item names and prices to keep historical records accurate. """
     class Meta:
         model = OrderItem
         fields = ['meal', 'item_name', 'quantity', 'unit_price']
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    """ General read-only serializer for Order objects. """
+    """ Main serializer for showing order information to users and staff. """
     items = OrderItemSerializer(many=True, read_only=True)
     payment_method = serializers.SerializerMethodField()
     payment_tx_ref = serializers.SerializerMethodField()
 
     def get_payment_method(self, obj):
-        # Get the first payment associated with the order
-        payment = obj.payments.first()  
+        # Find out how this order was paid for
+        payment = obj.payments.first()
         return payment.method if payment else None
 
     def get_payment_tx_ref(self, obj):
@@ -57,7 +57,7 @@ class OrderSerializer(serializers.ModelSerializer):
 # UPDATE SERIALIZERS
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
-    """ Serializer for updating only the order status. """
+    """ Used when we just need to change an order's status (like from pending to in progress). """
     class Meta:
         model = Order
         fields = ['status']
@@ -65,13 +65,13 @@ class OrderStatusUpdateSerializer(serializers.ModelSerializer):
 
 # WRITE/CREATE SERIALIZERS
 class OrderCreateItemSerializer(serializers.Serializer):
-    """ Accepts meal ID and quantity from the client. """
+    """ Handles the details for each item being ordered (which meal and how many). """
     meal_id = serializers.IntegerField(min_value=1)
     quantity = serializers.IntegerField(min_value=1)
 
 
 class OrderCreateSerializer(serializers.Serializer):
-    """ Securely creates an Order and nested OrderItems. """
+    """ Takes all the order information and safely creates both the order and all its items. """
     customer_name = serializers.CharField(allow_blank=True, required=False)
     customer_email = serializers.EmailField(required=False, allow_blank=True)
     contact_phone = serializers.CharField(required=False, allow_blank=True)
@@ -116,6 +116,7 @@ class OrderCreateSerializer(serializers.Serializer):
                 'item_name': meal.name,
             })
 
+        # Calculate the final total including delivery
         data['total_amount'] = calculated_total + delivery_fee
         data['items_processed'] = processed_items
         return data
@@ -125,8 +126,10 @@ class OrderCreateSerializer(serializers.Serializer):
         items_processed = validated_data.pop('items_processed')
         validated_data.pop('items', None)
 
+        # Create the main order record
         order = Order.objects.create(**validated_data)
 
+        # Create all the individual order items at once
         order_items_to_create = [
             OrderItem(
                 order=order,

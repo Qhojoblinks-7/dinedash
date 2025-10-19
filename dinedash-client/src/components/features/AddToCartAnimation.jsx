@@ -8,14 +8,14 @@ const AddToCartAnimation = ({ meal, onComplete }) => {
   const [cartPosition, setCartPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Get meal card position
+    // Find where the meal card is on the screen
     const mealCard = document.querySelector(`[data-meal-id="&#8373{meal.id}"]`);
     if (mealCard) {
       const rect = mealCard.getBoundingClientRect();
       setPosition({ x: rect.left, y: rect.top });
     }
 
-    // Get cart position
+    // Find where the cart button is on the screen
     const cartBtn = document.getElementById('cart-button');
     if (cartBtn) {
       const rect = cartBtn.getBoundingClientRect();
@@ -25,7 +25,7 @@ const AddToCartAnimation = ({ meal, onComplete }) => {
       });
     }
 
-    // Start animation sequence
+    // Begin the animation sequence with timed stages
     const timer1 = setTimeout(() => setStage('fly'), 400);
     const timer2 = setTimeout(() => setStage('unfold'), 1000);
     const timer3 = setTimeout(() => onComplete(), 1400);
@@ -49,8 +49,8 @@ const AddToCartAnimation = ({ meal, onComplete }) => {
       scale: 0.8,
       rotateX: -90,
       opacity: 0.8,
-      x: cartPosition.x - position.x - 100, // Adjust for card width
-      y: cartPosition.y - position.y - 100, // Adjust for card height
+      x: cartPosition.x - position.x - 100, // Position it to fly toward the cart
+      y: cartPosition.y - position.y - 100, // Accounting for the card's size
     },
     unfold: {
       scale: 0.3,

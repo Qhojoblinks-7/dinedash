@@ -77,11 +77,9 @@ const MenuItemCard = ({
                 </>
               )}
             </div>
-            {isAvailable && (
-                <div className="text-lg font-bold text-gray-900">
-                    <span className="text-sm font-normal text-gray-500">Ordered: </span>{quantity}
-                </div>
-            )}
+            <div className="text-lg font-bold text-gray-900">
+                <span className="text-sm font-normal text-gray-500">Ordered: </span>{quantity}
+            </div>
         </div>
       </div>
       
