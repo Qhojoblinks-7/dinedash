@@ -23,7 +23,8 @@ class OrderSerializer(serializers.ModelSerializer):
     payment_tx_ref = serializers.SerializerMethodField()
 
     def get_payment_method(self, obj):
-        payment = obj.payments.first()  # Get the first payment associated with the order
+        # Get the first payment associated with the order
+        payment = obj.payments.first()  
         return payment.method if payment else None
 
     def get_payment_tx_ref(self, obj):

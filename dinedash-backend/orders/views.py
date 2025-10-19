@@ -322,6 +322,14 @@ class AnalyticsAPIView(APIView):
             except Meal.DoesNotExist:
                 continue
 
+        # Ordered quantities for pending orders
+        ordered_quantities = {}
+        for order in completed_orders:
+            if order.status == 'pending':
+                for item in order.items.all():
+                    meal_id = str(item.meal.id)
+                    ordered_quantities[meal_id] = ordered_quantities.get(meal_id, 0) + item.quantity
+
         return Response({
             'total_revenue': total_revenue,
             'total_orders': total_orders,
@@ -329,6 +337,7 @@ class AnalyticsAPIView(APIView):
             'today_revenue': today_revenue,
             'daily_revenue': daily_revenue,
             'payment_breakdown': payment_breakdown,
-            'most_profitable': most_profitable
+            'most_profitable': most_profitable,
+            'ordered_quantities': ordered_quantities
         })
     

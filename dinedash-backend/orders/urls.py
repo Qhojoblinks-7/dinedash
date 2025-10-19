@@ -9,7 +9,7 @@ from .views import (
     AnalyticsAPIView,
 )
 
-app_name = "orders"  # Optional: allows namespacing URLs for reverse lookups
+app_name = "orders"  
 
 urlpatterns = [
     # List all orders (staff only)

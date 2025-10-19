@@ -12,10 +12,7 @@ import { fetchMeals, createMeal } from '../store/mealsSlice';
 import { fetchOrders, updateOrderStatus, finalizePayment } from '../store/ordersSlice';
 import { EditMealModal } from './EditMealModal';
 
-/* * NOTE: The getImageBaseUrl function and IMAGE_BASE_URL constant have been removed.
- * The meal.image URL is now used directly, as it should be an absolute URL 
- * returned by the Django backend.
- */
+
 
 const Dashboard = () => {
   const { addToast } = useToast();
@@ -107,7 +104,7 @@ const Dashboard = () => {
 
   const orderedQuantities = calculateOrderedQuantities();
 
-  // FIX: Ensure menuItems is an array before calling .reduce()
+  // Make sure menuItems is an array before calling .reduce()
   const menuItemsArray = Array.isArray(menuItems) ? menuItems : [];
 
   const categoryCounts = menuItemsArray.reduce((acc, meal) => {
@@ -124,7 +121,7 @@ const Dashboard = () => {
     { id: 'sides', name: 'Sides', count: categoryCounts.sides || 0 },
   ];
 
-  // FIX: Ensure menuItems is an array before calling .filter()
+  // Make sure menuItems is an array before calling .filter()
   const filteredMeals = menuItemsArray.filter(meal => {
     const matchesCategory = selectedCategory === 'all' || meal.category === selectedCategory;
     const matchesSearch = meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -138,8 +135,8 @@ const Dashboard = () => {
       id: meal.id.toString(),
       name: meal.name,
       description: meal.description || '',
-      // 👇 THE FIX: Use meal.image URL directly without prepending the domain
-      image: meal.image || null, 
+      // Use meal.image URL directly without prepending the domain
+      image: meal.image || null,
       price: parseFloat(meal.price),
       category: meal.category || 'main_course',
       isAvailable: meal.is_available,
@@ -190,10 +187,10 @@ const Dashboard = () => {
       try {
         await dispatch(updateOrderStatus({ orderId: selectedOrder.id, status: 'in progress' })).unwrap();
         dispatch(fetchOrders());
-        
+
         addToast('Payment verified successfully and sent to kitchen!', 'success');
-        setSelectedOrder(null); 
-      } catch (e) {
+        setSelectedOrder(null);
+      } catch {
           addToast('Failed to verify payment.', 'error');
       } finally {
         setVerifyingPayment(false);
@@ -227,7 +224,7 @@ const Dashboard = () => {
     try {
       await dispatch(createMeal(formData)).unwrap();
       setShowAddMeal(false);
-      // Clear form on success
+      // Reset form on success
       setNewMeal({
         name: '',
         description: '',
@@ -254,11 +251,11 @@ const Dashboard = () => {
     }
   };
 
-  // CLEANUP: Use selectedOrder.status directly
+  // Use selectedOrder.status directly
   const tableDetails = selectedOrder ? {
     tableNumber: selectedOrder.tracking_code,
     orderType: selectedOrder.order_type,
-    status: selectedOrder.status, // Use server status
+    status: selectedOrder.status,
   } : null;
 
   const orderDetails = selectedOrder ? {
@@ -342,7 +339,7 @@ const Dashboard = () => {
         />
       )}
       
-      {/* NEW: Edit Meal Modal */}
+      {/* Edit Meal Modal */}
       {mealToEdit && (
         <EditMealModal
           isOpen={!!mealToEdit}
