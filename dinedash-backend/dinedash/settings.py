@@ -161,18 +161,62 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom user model
 AUTH_USER_MODEL = 'users.User'
 
-# CORS settings
+# --- START CORS & CSRF CONFIGURATION ---
+# This is the section updated to ensure CSRF_TRUSTED_ORIGINS is set correctly.
+
+# The list of allowed origins when in production (DEBUG=False)
+PRODUCTION_CORS_ALLOWED_ORIGINS = [
+    # Explicitly include the Render domain (HTTPS)
+    'https://dinedash-2-lh2q.onrender.com',
+    
+    # Explicitly include your local development server (HTTP is needed when running locally)
+    'http://localhost:5175', 
+
+    # All your other origins:
+    'https://dinedash-w5bz.vercel.app', 
+    'https://dinedash-w5bz-59tifljix-qhojoblinks-7s-projects.vercel.app', 
+    'https://dinedash-w5bz-fxsrndbwh-qhojoblinks-7s-projects.vercel.app',
+    'https://dinedash-yz8v.vercel.app',
+    'https://dinedash-yw4z-git-main-qhojoblinks-7s-projects.vercel.app',
+    'https://dinedash-yw4z-e592jwuzz-qhojoblinks-7s-projects.vercel.app',
+    'https://dinedash-yw4z.vercel.app',
+    'https://dinedash-yz8v-ltmdgkpb5-qhojoblinks-7s-projects.vercel.app', 
+    'https://dinedash-yw4z-kj66zshlm-qhojoblinks-7s-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5176', 
+    'http://localhost:8000', 
+    'http://localhost:5177', 
+    'http://localhost:5178', 
+    'http://localhost:5179', 
+    'http://localhost:5180'
+] + (os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else [])
+
+
 if DEBUG:
-    # Allow all origins in development
+    # Development settings
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOW_CREDENTIALS = True
-
-    # Optional: log requests for debugging
     CORS_EXPOSE_HEADERS = ["Content-Type", "Authorization"]
+    
+    # Trust localhost for CSRF when running Django locally
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
 else:
-    # Production-safe origins
-    CORS_ALLOWED_ORIGINS = ['https://dinedash-w5bz.vercel.app', 'https://dinedash-w5bz-59tifljix-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-w5bz-fxsrndbwh-qhojoblinks-7s-projects.vercel.app','https://dinedash-yz8v.vercel.app','https://dinedash-yw4z-git-main-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z-e592jwuzz-qhojoblinks-7s-projects.vercel.app','https://dinedash-yw4z.vercel.app','https://dinedash-yz8v-ltmdgkpb5-qhojoblinks-7s-projects.vercel.app', 'https://dinedash-yw4z-kj66zshlm-qhojoblinks-7s-projects.vercel.app','http://localhost:5173','http://localhost:5174','http://localhost:5175','http://localhost:5176', 'http://localhost:8000', 'http://localhost:5177', 'http://localhost:5178', 'http://localhost:5179', 'http://localhost:5180'] + (os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else [])
+    # Production settings
+    CORS_ALLOWED_ORIGINS = PRODUCTION_CORS_ALLOWED_ORIGINS
     CORS_ALLOW_CREDENTIALS = True
+    
+    # Crucial Fix: Trust the same origins for CSRF
+    # This is necessary for POST/PUT/DELETE requests originating from the whitelisted domains
+    CSRF_TRUSTED_ORIGINS = [
+        origin for origin in PRODUCTION_CORS_ALLOWED_ORIGINS if origin.startswith('https') or origin.startswith('http')
+    ]
+    
     CORS_ALLOW_METHODS = [
         'DELETE',
         'GET',
@@ -192,6 +236,8 @@ else:
         'x-csrftoken',
         'x-requested-with',
     ]
+# --- END CORS & CSRF CONFIGURATION ---
+
 
 # Security settings for production
 if not DEBUG:
