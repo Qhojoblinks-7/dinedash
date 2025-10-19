@@ -81,16 +81,18 @@ const Dashboard = () => {
 
   const calculateOrderedQuantities = () => {
     const quantities = {};
-    orders.forEach(order => {
-      if (order.status === 'pending' && order.items && Array.isArray(order.items)) {
-        order.items.forEach(item => {
-          const mealId = item.meal?.toString() || item.meal_id?.toString();
-          if (mealId) {
-            quantities[mealId] = (quantities[mealId] || 0) + (item.quantity || 1);
-          }
-        });
-      }
-    });
+    if (Array.isArray(orders)) {
+      orders.forEach(order => {
+        if (order.status === 'pending' && order.items && Array.isArray(order.items)) {
+          order.items.forEach(item => {
+            const mealId = item.meal?.toString() || item.meal_id?.toString();
+            if (mealId) {
+              quantities[mealId] = (quantities[mealId] || 0) + (item.quantity || 1);
+            }
+          });
+        }
+      });
+    }
     return quantities;
   };
 
