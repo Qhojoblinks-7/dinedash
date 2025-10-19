@@ -12,10 +12,12 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 const makeRequest = async (url, options = {}) => {
+  console.log('API Request URL:', url);
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   });
+  console.log('API Response Status:', response.status);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   return await response.json();
 };
