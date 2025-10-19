@@ -143,6 +143,11 @@ else:
     # Use WhiteNoise for static files if not using S3
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+    # For production without S3, create media directory
+    if not DEBUG:
+        MEDIA_ROOT = BASE_DIR / 'media'
+        os.makedirs(MEDIA_ROOT, exist_ok=True)
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom user model

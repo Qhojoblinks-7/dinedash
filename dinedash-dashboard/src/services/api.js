@@ -173,7 +173,8 @@ class ApiService {
     const config = {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        // Don't set Content-Type for FormData, let browser handle it
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...options.headers,
       },
       signal: controller.signal,

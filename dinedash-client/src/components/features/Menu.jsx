@@ -32,7 +32,7 @@ const Menu = ({ onAdd, orderCount, onOpenCart }) => {
   };
 
   const filteredMeals = useMemo(() => {
-    let filtered = meals;
+    let filtered = Array.isArray(meals) ? meals : [];
 
     if (selectedCategory !== 'all' && categoryFilters[selectedCategory]) {
       filtered = filtered.filter(categoryFilters[selectedCategory]);
