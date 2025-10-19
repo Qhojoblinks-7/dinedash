@@ -73,7 +73,7 @@ const mealsSlice = createSlice({
             })
             .addCase(fetchMeals.fulfilled, (state, action) => {
                 state.loading = false;
-                state.meals = Array.isArray(action.payload) ? action.payload : [];
+                state.meals = action.payload.results || (Array.isArray(action.payload) ? action.payload : []);
             })
             .addCase(fetchMeals.rejected, (state, action) => {
                 state.loading = false;
