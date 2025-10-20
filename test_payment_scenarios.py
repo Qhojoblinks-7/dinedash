@@ -34,13 +34,13 @@ def test_payment_scenario(scenario_name, transaction_ref, expected_status):
     order_data = {
         "customer_name": "Test Customer",
         "customer_email": "test@example.com",
-        "order_type": "dine_in",
+        "order_type": "dine in",
         "table_number": "T1",
         "contact_phone": "+1234567890",
         "delivery_address": "",
         "items": [
             {
-                "meal": 1,  # Assuming meal ID 1 exists
+                "meal_id": 1,  # Assuming meal ID 1 exists
                 "quantity": 2,
                 "special_instructions": f"Test order for {scenario_name}"
             }
