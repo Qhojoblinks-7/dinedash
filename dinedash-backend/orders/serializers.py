@@ -63,7 +63,7 @@ class OrderStatusUpdateSerializer(serializers.ModelSerializer):
         fields = ['status']
 
 
-# WRITE/CREATE SERIALIZERS
+# CREATE SERIALIZERS
 class OrderCreateItemSerializer(serializers.Serializer):
     """ Handles the details for each item being ordered (which meal and how many). """
     meal_id = serializers.IntegerField(min_value=1)

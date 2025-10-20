@@ -34,5 +34,5 @@ urlpatterns = [
     path('healthz/', health_check),
 ]
 
-# Serve media files during development and production (temporary for Render)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Media files are handled by S3 when AWS credentials are configured
+# No need to serve them through Django in production

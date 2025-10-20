@@ -36,6 +36,17 @@ services:
         value: your-flutterwave-public-key
       - key: FLUTTERWAVE_SECRET_KEY
         value: your-flutterwave-secret-key
+      # AWS S3 settings for media file storage
+      - key: AWS_ACCESS_KEY_ID
+        value: your-aws-access-key
+      - key: AWS_SECRET_ACCESS_KEY
+        value: your-aws-secret-key
+      - key: AWS_STORAGE_BUCKET_NAME
+        value: dinedash-media-bucket
+      - key: AWS_S3_REGION_NAME
+        value: us-east-1
+      - key: AWS_S3_CUSTOM_DOMAIN
+        value: dinedash-media-bucket.s3.amazonaws.com
 
 databases:
   - name: dinedash-db

@@ -15,5 +15,3 @@ urlpatterns = [
     path('finalize/', finalize_payment, name='finalize-payment'),
 ]
 
-# REMINDER: You must include this file in your main project's urls.py:
-# 

@@ -9,7 +9,6 @@ from orders.models import Order
 from .models import Payment
 from .serializers import PaymentCreateSerializer, PaymentSerializer 
 
-# --- STAFF/ADMIN VIEWS ---
 
 class PaymentListAPIView(generics.ListAPIView):
     """
@@ -20,7 +19,7 @@ class PaymentListAPIView(generics.ListAPIView):
     permission_classes = [IsAdminUser] 
 
 
-# --- MOCK PAYMENT GATEWAY (Capstone Simulation) ---
+# --- MOCK PAYMENT GATEWAY  ---
 
 class MockPaymentAPIView(generics.GenericAPIView):
     """
@@ -91,7 +90,7 @@ class MockVerifyAPIView(generics.GenericAPIView):
 
         try:
             with transaction.atomic():
-                # 1. Find the payment record using both the transaction reference and order ID
+                #Find the payment record using both the transaction reference and order ID
                 payment = Payment.objects.select_related('order').get(
                     transaction_ref=tx_ref,
                     order_id=order_id # Using both ensures we get the right payment
@@ -105,7 +104,7 @@ class MockVerifyAPIView(generics.GenericAPIView):
                          "order_id": order.id
                      }, status=status.HTTP_200_OK)
 
-                # 2. Handle successful payment scenario
+                # Handle successful payment scenario
                 if mock_status.lower() == "successful":
 
                     # Mark the payment as completed
@@ -122,7 +121,7 @@ class MockVerifyAPIView(generics.GenericAPIView):
                         "order": PaymentSerializer(payment).data # Return payment details
                     }, status=status.HTTP_200_OK)
 
-                # 3. Handle failed payment scenario
+                #  Handle failed payment scenario
                 else:
                     payment.status = Payment.STATUS_FAILED
                     payment.save()

@@ -232,9 +232,7 @@ class OrderStatusUpdateAPIView(APIView):
       
 
 
-# ----------------------------------------------------------------------
-# Analytics API
-# ----------------------------------------------------------------------
+
 class AnalyticsAPIView(APIView):
     """ Provides business insights and statistics for the dashboard. """
     permission_classes = [permissions.AllowAny]
