@@ -28,12 +28,30 @@ const MenuItemCard = ({
   return (
     <div className={`relative w-full max-w-xs sm:max-w-none rounded-xl shadow-lg bg-white overflow-hidden ${!isAvailable ? 'opacity-50 grayscale' : ''}`}>
       {/* Product Image */}
-      <div className="w-full h-40">
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover rounded-t-xl"
-        />
+      <div className="w-full h-40 bg-gray-200 rounded-t-xl flex items-center justify-center">
+        {image ? (
+          <>
+            <img
+              src={image}
+              alt={name}
+              className="w-full h-full object-cover rounded-t-xl"
+              onError={(e) => {
+                console.log('Image failed to load:', image);
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+            <div className="text-gray-500 text-center hidden">
+              <div className="text-4xl mb-2">🍽️</div>
+              <div className="text-sm">No Image</div>
+            </div>
+          </>
+        ) : (
+          <div className="text-gray-500 text-center">
+            <div className="text-4xl mb-2">🍽️</div>
+            <div className="text-sm">No Image</div>
+          </div>
+        )}
       </div>
 
       {/* Delete Button */}

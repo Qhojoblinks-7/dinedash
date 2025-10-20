@@ -91,7 +91,7 @@ const Dashboard = () => {
       orders.forEach(order => {
         if (order.status === 'pending' && order.items && Array.isArray(order.items)) {
           order.items.forEach(item => {
-            const mealId = item.meal?.id?.toString() || item.meal_id?.toString();
+            const mealId = item.meal?.toString() || item.meal_id?.toString();
             if (mealId) {
               quantities[mealId] = (quantities[mealId] || 0) + (item.quantity || 1);
             }
@@ -131,12 +131,22 @@ const Dashboard = () => {
 
 
   const transformedMenuItems = filteredMeals.map(meal => {
+    let imageUrl = null;
+    if (meal.image) {
+      if (meal.image.startsWith('http')) {
+        // Already a full URL
+        imageUrl = meal.image;
+      } else {
+        // Relative path, construct full URL
+        imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/media/${meal.image}`;
+      }
+    }
     return {
       id: meal.id.toString(),
       name: meal.name,
       description: meal.description || '',
       // Use meal.image URL directly without prepending the domain
-      image: meal.image || null,
+      image: imageUrl,
       price: parseFloat(meal.price),
       category: meal.category || 'main_course',
       isAvailable: meal.is_available,
